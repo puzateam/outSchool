@@ -1,267 +1,757 @@
-const app = new Vue({
-    el: '#app',
-    data: {
-        currentView: 'statusView', // Default view
-        requests: [],
-        newRequest: {
-            studentName: '',
-            studentClass: '',
-            leaveDate: '',
-            leaveTimeFrom: '',
-            leaveTimeTo: '',
-            reason: '',
-        },
-        adminCredentials: {
-            username: '',
-            password: ''
-        },
-        isAdminLoggedIn: false,
-        searchTerm: '',
-        filterStatus: '',
-        searchTermAdmin: '',
-        filterStatusAdmin: 'รอพิจารณา', // Default admin filter
-    },
-    computed: {
-        filteredRequests() {
-            let tempRequests = this.requests;
-
-            if (this.searchTerm) {
-                const term = this.searchTerm.toLowerCase();
-                tempRequests = tempRequests.filter(req =>
-                    req.studentName.toLowerCase().includes(term) ||
-                    req.reason.toLowerCase().includes(term) ||
-                    req.status.toLowerCase().includes(term)
-                );
-            }
-
-            if (this.filterStatus) {
-                tempRequests = tempRequests.filter(req => req.status === this.filterStatus);
-            }
-            // Sort by submissionDate descending (newest first)
-            return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
-        },
-        filteredAdminRequests() {
-            let tempRequests = this.requests;
-
-            if (this.searchTermAdmin) {
-                const term = this.searchTermAdmin.toLowerCase();
-                tempRequests = tempRequests.filter(req =>
-                    req.studentName.toLowerCase().includes(term) ||
-                    req.reason.toLowerCase().includes(term)
-                );
-            }
-            
-            if (this.filterStatusAdmin) {
-                tempRequests = tempRequests.filter(req => req.status === this.filterStatusAdmin);
-            }
-             // Sort by submissionDate descending (newest first)
-            return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบขออนุญาตออกนอกสถานศึกษา</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script> <!-- Vue.js 2 -->
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Prompt', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
         }
-    },
-    methods: {
-        setView(view) {
-            this.currentView = view;
-            // If navigating to admin dashboard without being logged in, redirect to login
-            if (view === 'adminDashboard' && !this.isAdminLoggedIn) {
-                this.currentView = 'adminLogin';
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'กรุณาเข้าสู่ระบบ',
-                    text: 'คุณต้องเข้าสู่ระบบผู้บริหารเพื่อเข้าถึงหน้านี้',
-                    confirmButtonColor: '#D32F2F'
-                });
-            }
-            // Reset search/filter for general status view
-            if (view === 'statusView') {
-                this.searchTerm = '';
-                this.filterStatus = '';
-            }
-        },
-        loadRequests() {
-            const storedRequests = localStorage.getItem('schoolLeaveRequests');
-            if (storedRequests) {
-                this.requests = JSON.parse(storedRequests);
-            }
-            // Check admin login status from session storage (persists across page refresh but not browser close)
-            if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
-                this.isAdminLoggedIn = true;
-            }
-        },
-        saveRequests() {
-            localStorage.setItem('schoolLeaveRequests', JSON.stringify(this.requests));
-        },
-        generateId() {
-            return '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-        },
-        formatDate(dateString, includeTime = false) {
-            if (!dateString) return '-';
-            const date = new Date(dateString);
-            const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-            if (includeTime) {
-                options.hour = '2-digit';
-                options.minute = '2-digit';
-            }
-            return date.toLocaleDateString('th-TH', options);
-        },
-        submitRequest() {
-            if (!this.newRequest.studentName || !this.newRequest.studentClass || !this.newRequest.leaveDate || !this.newRequest.leaveTimeFrom || !this.newRequest.leaveTimeTo || !this.newRequest.reason) {
-                 Swal.fire({
-                    icon: 'error',
-                    title: 'ข้อมูลไม่ครบถ้วน',
-                    text: 'กรุณากรอกข้อมูลให้ครบทุกช่อง',
-                    confirmButtonColor: '#D32F2F'
-                });
-                return;
-            }
 
-            const requestData = {
-                id: this.generateId(),
-                studentName: this.newRequest.studentName,
-                studentClass: this.newRequest.studentClass,
-                leaveDate: this.newRequest.leaveDate,
-                leaveTimeFrom: this.newRequest.leaveTimeFrom,
-                leaveTimeTo: this.newRequest.leaveTimeTo,
-                reason: this.newRequest.reason,
-                status: 'รอพิจารณา', // Default status
-                submissionDate: new Date().toISOString()
-            };
-            this.requests.push(requestData);
-            this.saveRequests();
+        #app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
 
-            // Reset form
-            this.newRequest = { studentName: '', studentClass: '', leaveDate: '', leaveTimeFrom: '', leaveTimeTo: '', reason: '' };
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'ยื่นคำขอสำเร็จ!',
-                text: 'คำขอของคุณถูกส่งเข้าระบบแล้ว โปรดรอการพิจารณา',
-                confirmButtonColor: '#D32F2F'
-            }).then(() => {
-                this.setView('statusView'); // Go to status view after submission
-            });
-        },
-        loginAdmin() {
-            if (this.adminCredentials.username === 'mlpyboss' && this.adminCredentials.password === '06052520') {
-                this.isAdminLoggedIn = true;
-                sessionStorage.setItem('isAdminLoggedIn', 'true'); // Save login state
-                this.adminCredentials = { username: '', password: '' }; // Clear credentials
-                this.setView('adminDashboard');
-                 Swal.fire({
-                    icon: 'success',
-                    title: 'เข้าสู่ระบบสำเร็จ',
-                    text: 'ยินดีต้อนรับผู้บริหาร',
-                    timer: 1500,
-                    showConfirmButton: false,
-                    confirmButtonColor: '#D32F2F'
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เข้าสู่ระบบไม่สำเร็จ',
-                    text: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
-                    confirmButtonColor: '#D32F2F'
-                });
+        /* Header Styles */
+        header {
+            background: linear-gradient(135deg, #D32F2F, #FFC107); /* Red to Yellow gradient */
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        #logo {
+            max-height: 60px; /* Adjust as needed */
+            width: auto;
+            margin-bottom: 10px;
+        }
+
+        #system-name {
+            font-size: 1.4em;
+            margin: 0;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        /* Navigation Styles */
+        nav {
+            background-color: #333;
+            color: white;
+        }
+
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+        }
+
+        nav ul li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        nav ul li a:hover, nav ul li a.active {
+            background-color: #FFC107; /* Yellow for hover/active */
+            color: #D32F2F; /* Red text for contrast */
+        }
+        .admin-logout a:hover {
+            background-color: #c0392b; /* Darker red for logout hover */
+        }
+
+
+        /* Main Content Styles */
+        main {
+            flex-grow: 1;
+            padding: 20px;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        .view-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .view-container h2 {
+            color: #D32F2F; /* Red */
+            border-bottom: 2px solid #FFC107; /* Yellow */
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .view-container h2 i {
+            margin-right: 8px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group input[type="time"],
+        .form-group input[type="password"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: 'Prompt', sans-serif;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Prompt', sans-serif;
+            font-size: 1em;
+            transition: background-color 0.3s, transform 0.1s;
+            margin-right: 5px;
+            margin-bottom: 5px; /* For wrapping */
+        }
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-submit {
+            background-color: #D32F2F; /* Red */
+            color: white;
+        }
+        .btn-submit:hover {
+            background-color: #b71c1c; /* Darker Red */
+        }
+
+        .btn-approve {
+            background-color: #4CAF50; /* Green */
+            color: white;
+        }
+        .btn-approve:hover {
+            background-color: #388E3C;
+        }
+
+        .btn-reject {
+            background-color: #f44336; /* Red (different from submit) */
+            color: white;
+        }
+        .btn-reject:hover {
+            background-color: #c62828;
+        }
+
+        .btn-delete {
+            background-color: #757575; /* Gray */
+            color: white;
+        }
+        .btn-delete:hover {
+            background-color: #525252;
+        }
+
+        /* Table Styles */
+        .table-responsive {
+            overflow-x: auto; /* Important for responsiveness */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #f0f0f0; /* Light gray for header */
+            font-weight: 500;
+            color: #D32F2F; /* Red text for table headers */
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .status-pending { background-color: #fff9c4; /* Light Yellow */ }
+        .status-approved { background-color: #c8e6c9; /* Light Green */ }
+        .status-rejected { background-color: #ffcdd2; /* Light Red */ }
+
+        .no-data {
+            text-align: center;
+            font-style: italic;
+            color: #777;
+            padding: 20px;
+        }
+
+        /* Filter and Search */
+        .filter-search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .search-input, .filter-select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Prompt', sans-serif;
+        }
+        .search-input {
+            flex-grow: 1;
+        }
+        .filter-select {
+            min-width: 180px;
+        }
+
+
+        /* Footer Styles */
+        footer {
+            background-color: #333;
+            color: #aaa;
+            text-align: center;
+            padding: 15px;
+            font-size: 0.9em;
+            margin-top: auto; /* Pushes footer to bottom */
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #system-name {
+                font-size: 1.2em;
             }
-        },
-        logoutAdmin() {
-             Swal.fire({
-                title: 'ยืนยันการออกจากระบบ?',
-                text: "คุณต้องการออกจากระบบผู้บริหารใช่หรือไม่?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#D32F2F',
-                cancelButtonColor: '#FFC107',
-                confirmButtonText: 'ใช่, ออกจากระบบ',
-                cancelButtonText: 'ยกเลิก'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    this.isAdminLoggedIn = false;
-                    sessionStorage.removeItem('isAdminLoggedIn');
-                    this.setView('statusView'); // Or 'adminLogin'
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'ออกจากระบบแล้ว',
-                        timer: 1500,
-                        showConfirmButton: false,
-                        confirmButtonColor: '#D32F2F'
-                    });
-                }
-            });
-        },
-        approveRequest(id) {
-            Swal.fire({
-                title: 'ยืนยันการอนุมัติ?',
-                text: "คุณต้องการอนุมัติคำขอนี้ใช่หรือไม่?",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#4CAF50',
-                cancelButtonColor: '#757575',
-                confirmButtonText: 'อนุมัติ',
-                cancelButtonText: 'ยกเลิก'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const request = this.requests.find(req => req.id === id);
-                    if (request) {
-                        request.status = 'อนุมัติ';
-                        this.saveRequests();
-                        Swal.fire('อนุมัติแล้ว!', 'คำขอได้รับการอนุมัติเรียบร้อย', 'success');
+            #logo {
+                max-height: 50px;
+            }
+            nav ul {
+                flex-direction: column; /* Stack nav items on small screens */
+            }
+            nav ul li a {
+                padding: 12px 10px;
+            }
+            .filter-search-container {
+                flex-direction: column;
+            }
+            .search-input, .filter-select {
+                width: 100%;
+            }
+            .btn {
+                width: 100%; /* Make buttons full width on small screens */
+                margin-bottom: 10px;
+                margin-right: 0;
+            }
+            .table-responsive td, .table-responsive th {
+                font-size: 0.9em; /* Smaller text in tables */
+                padding: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #system-name {
+                font-size: 1em;
+            }
+            #logo {
+                max-height: 40px;
+            }
+             .view-container h2 {
+                font-size: 1.3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="header-content">
+                <img src="logo.png" alt="โลโก้โรงเรียน" id="logo"> <!-- คุณจะต้องมีไฟล์ logo.png ในโฟลเดอร์เดียวกัน -->
+                <h1 id="system-name">ระบบขออนุญาตออกนอกสถานศึกษา<br>ของโรงเรียนชุมชนบ้านแม่หละป่าป๋วย</h1>
+            </div>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="#" @click.prevent="setView('requestForm')" :class="{active: currentView === 'requestForm'}">ยื่นขออนุญาต</a></li>
+                <li><a href="#" @click.prevent="setView('statusView')" :class="{active: currentView === 'statusView'}">ตรวจสอบสถานะ/รายการทั้งหมด</a></li>
+                <li>
+                    <a v-if="!isAdminLoggedIn" href="#" @click.prevent="setView('adminLogin')" :class="{active: currentView === 'adminLogin'}">ผู้บริหาร</a>
+                    <a v-if="isAdminLoggedIn" href="#" @click.prevent="setView('adminDashboard')" :class="{active: currentView === 'adminDashboard'}">แดชบอร์ดผู้บริหาร</a>
+                </li>
+                <li v-if="isAdminLoggedIn" class="admin-logout"><a href="#" @click.prevent="logoutAdmin">ออกจากระบบผู้บริหาร</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <!-- View: Request Form -->
+            <div v-if="currentView === 'requestForm'" class="view-container">
+                <h2><i class="fas fa-file-alt"></i> ยื่นคำขออนุญาตออกนอกสถานศึกษา</h2>
+                <form @submit.prevent="submitRequest" class="request-form">
+                    <div class="form-group">
+                        <label for="studentName">ชื่อ-สกุล นักเรียน:</label>
+                        <input type="text" id="studentName" v-model="newRequest.studentName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="studentClass">ชั้นเรียน:</label>
+                        <input type="text" id="studentClass" v-model="newRequest.studentClass" placeholder="เช่น ม.1/1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="leaveDate">วันที่ต้องการออก:</label>
+                        <input type="date" id="leaveDate" v-model="newRequest.leaveDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="leaveTimeFrom">ตั้งแต่เวลา:</label>
+                        <input type="time" id="leaveTimeFrom" v-model="newRequest.leaveTimeFrom" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="leaveTimeTo">ถึงเวลา:</label>
+                        <input type="time" id="leaveTimeTo" v-model="newRequest.leaveTimeTo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reason">เหตุผล:</label>
+                        <textarea id="reason" v-model="newRequest.reason" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-submit">ยื่นคำขอ</button>
+                </form>
+            </div>
+
+            <!-- View: Status / All Requests -->
+            <div v-if="currentView === 'statusView'" class="view-container">
+                <h2><i class="fas fa-clipboard-list"></i> รายการคำขออนุญาตทั้งหมด</h2>
+                <div class="filter-search-container">
+                    <input type="text" v-model="searchTerm" placeholder="ค้นหาชื่อ, เหตุผล, สถานะ..." class="search-input">
+                    <select v-model="filterStatus" class="filter-select">
+                        <option value="">สถานะทั้งหมด</option>
+                        <option value="รอพิจารณา">รอพิจารณา</option>
+                        <option value="อนุมัติ">อนุมัติ</option>
+                        <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
+                    </select>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ลำดับ</th>
+                                <th>ชื่อ-สกุล</th>
+                                <th>ชั้นเรียน</th>
+                                <th>วันที่/เวลาออก</th>
+                                <th>เหตุผล</th>
+                                <th>สถานะ</th>
+                                <th>วันที่ยื่น</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="filteredRequests.length === 0">
+                                <td colspan="7" class="no-data">ไม่พบข้อมูลคำขอ</td>
+                            </tr>
+                            <tr v-for="(req, index) in filteredRequests" :key="req.id" :class="getStatusClass(req.status)">
+                                <td>{{ index + 1 }}</td>
+                                <td>{{ req.studentName }}</td>
+                                <td>{{ req.studentClass }}</td>
+                                <td>{{ formatDate(req.leaveDate) }} ({{ req.leaveTimeFrom }} - {{ req.leaveTimeTo }})</td>
+                                <td>{{ req.reason }}</td>
+                                <td>{{ req.status }}</td>
+                                <td>{{ formatDate(req.submissionDate, true) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- View: Admin Login -->
+            <div v-if="currentView === 'adminLogin'" class="view-container">
+                <h2><i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบผู้บริหาร</h2>
+                <form @submit.prevent="loginAdmin" class="login-form">
+                    <div class="form-group">
+                        <label for="username">ชื่อผู้ใช้:</label>
+                        <input type="text" id="username" v-model="adminCredentials.username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">รหัสผ่าน:</label>
+                        <input type="password" id="password" v-model="adminCredentials.password" required>
+                    </div>
+                    <button type="submit" class="btn btn-submit">เข้าสู่ระบบ</button>
+                </form>
+            </div>
+
+            <!-- View: Admin Dashboard -->
+            <div v-if="currentView === 'adminDashboard' && isAdminLoggedIn" class="view-container">
+                <h2><i class="fas fa-user-shield"></i> แดชบอร์ดผู้บริหาร - จัดการคำขอ</h2>
+                 <div class="filter-search-container">
+                    <input type="text" v-model="searchTermAdmin" placeholder="ค้นหาชื่อ, เหตุผล..." class="search-input">
+                    <select v-model="filterStatusAdmin" class="filter-select">
+                        <option value="">สถานะทั้งหมด</option>
+                        <option value="รอพิจารณา">รอพิจารณา</option>
+                        <option value="อนุมัติ">อนุมัติ</option>
+                        <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
+                    </select>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ชื่อ-สกุล</th>
+                                <th>ชั้นเรียน</th>
+                                <th>วันที่/เวลาออก</th>
+                                <th>เหตุผล</th>
+                                <th>สถานะ</th>
+                                <th>วันที่ยื่น</th>
+                                <th>การดำเนินการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                             <tr v-if="filteredAdminRequests.length === 0">
+                                <td colspan="7" class="no-data">ไม่พบข้อมูลคำขอ</td>
+                            </tr>
+                            <tr v-for="req in filteredAdminRequests" :key="req.id" :class="getStatusClass(req.status)">
+                                <td>{{ req.studentName }}</td>
+                                <td>{{ req.studentClass }}</td>
+                                <td>{{ formatDate(req.leaveDate) }} ({{ req.leaveTimeFrom }} - {{ req.leaveTimeTo }})</td>
+                                <td>{{ req.reason }}</td>
+                                <td>{{ req.status }}</td>
+                                <td>{{ formatDate(req.submissionDate, true) }}</td>
+                                <td>
+                                    <button v-if="req.status === 'รอพิจารณา'" @click="approveRequest(req.id)" class="btn btn-approve"><i class="fas fa-check"></i> อนุมัติ</button>
+                                    <button v-if="req.status === 'รอพิจารณา'" @click="rejectRequest(req.id)" class="btn btn-reject"><i class="fas fa-times"></i> ไม่อนุมัติ</button>
+                                    <button @click="deleteRequest(req.id)" class="btn btn-delete"><i class="fas fa-trash-alt"></i> ลบ</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>พัฒนาโดย นายสุชาติ เวียงชัย © 2025 ระบบขออนุญาตออกนอกสถานศึกษาออนไลน์</p>
+        </footer>
+    </div>
+
+    <script>
+        const app = new Vue({
+            el: '#app',
+            data: {
+                currentView: 'statusView', // Default view
+                requests: [],
+                newRequest: {
+                    studentName: '',
+                    studentClass: '',
+                    leaveDate: '',
+                    leaveTimeFrom: '',
+                    leaveTimeTo: '',
+                    reason: '',
+                },
+                adminCredentials: {
+                    username: '',
+                    password: ''
+                },
+                isAdminLoggedIn: false,
+                searchTerm: '',
+                filterStatus: '',
+                searchTermAdmin: '',
+                filterStatusAdmin: 'รอพิจารณา', // Default admin filter
+            },
+            computed: {
+                filteredRequests() {
+                    let tempRequests = this.requests;
+
+                    if (this.searchTerm) {
+                        const term = this.searchTerm.toLowerCase();
+                        tempRequests = tempRequests.filter(req =>
+                            req.studentName.toLowerCase().includes(term) ||
+                            req.reason.toLowerCase().includes(term) ||
+                            req.status.toLowerCase().includes(term)
+                        );
                     }
-                }
-            });
-        },
-        rejectRequest(id) {
-            Swal.fire({
-                title: 'ยืนยันการไม่อนุมัติ?',
-                text: "คุณต้องการไม่อนุมัติคำขอนี้ใช่หรือไม่?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#f44336',
-                cancelButtonColor: '#757575',
-                confirmButtonText: 'ไม่อนุมัติ',
-                cancelButtonText: 'ยกเลิก'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const request = this.requests.find(req => req.id === id);
-                    if (request) {
-                        request.status = 'ไม่อนุมัติ';
-                        this.saveRequests();
-                        Swal.fire('ไม่อนุมัติแล้ว!', 'คำขอไม่ได้รับการอนุมัติ', 'info');
+
+                    if (this.filterStatus) {
+                        tempRequests = tempRequests.filter(req => req.status === this.filterStatus);
                     }
+                    // Sort by submissionDate descending (newest first)
+                    return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
+                },
+                filteredAdminRequests() {
+                    let tempRequests = this.requests;
+
+                    if (this.searchTermAdmin) {
+                        const term = this.searchTermAdmin.toLowerCase();
+                        tempRequests = tempRequests.filter(req =>
+                            req.studentName.toLowerCase().includes(term) ||
+                            req.reason.toLowerCase().includes(term)
+                        );
+                    }
+                    
+                    if (this.filterStatusAdmin) {
+                        tempRequests = tempRequests.filter(req => req.status === this.filterStatusAdmin);
+                    }
+                     // Sort by submissionDate descending (newest first)
+                    return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
                 }
-            });
-        },
-        deleteRequest(id) {
-            Swal.fire({
-                title: 'ยืนยันการลบ?',
-                text: "คุณต้องการลบคำขอนี้ออกจากระบบใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้",
-                icon: 'error',
-                showCancelButton: true,
-                confirmButtonColor: '#D32F2F',
-                cancelButtonColor: '#757575',
-                confirmButtonText: 'ใช่, ลบเลย!',
-                cancelButtonText: 'ยกเลิก'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    this.requests = this.requests.filter(req => req.id !== id);
+            },
+            methods: {
+                setView(view) {
+                    this.currentView = view;
+                    if (view === 'adminDashboard' && !this.isAdminLoggedIn) {
+                        this.currentView = 'adminLogin';
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'กรุณาเข้าสู่ระบบ',
+                            text: 'คุณต้องเข้าสู่ระบบผู้บริหารเพื่อเข้าถึงหน้านี้',
+                            confirmButtonColor: '#D32F2F'
+                        });
+                    }
+                    if (view === 'statusView') {
+                        this.searchTerm = '';
+                        this.filterStatus = '';
+                    }
+                },
+                loadRequests() {
+                    const storedRequests = localStorage.getItem('schoolLeaveRequests');
+                    if (storedRequests) {
+                        this.requests = JSON.parse(storedRequests);
+                    }
+                    if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+                        this.isAdminLoggedIn = true;
+                    }
+                },
+                saveRequests() {
+                    localStorage.setItem('schoolLeaveRequests', JSON.stringify(this.requests));
+                },
+                generateId() {
+                    return '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+                },
+                formatDate(dateString, includeTime = false) {
+                    if (!dateString) return '-';
+                    const date = new Date(dateString);
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+                    const year = date.getFullYear();
+                    
+                    let formattedDate = `${day}/${month}/${year}`;
+
+                    if (includeTime) {
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        formattedDate += ` ${hours}:${minutes}`;
+                    }
+                    return formattedDate;
+                },
+                submitRequest() {
+                    if (!this.newRequest.studentName || !this.newRequest.studentClass || !this.newRequest.leaveDate || !this.newRequest.leaveTimeFrom || !this.newRequest.leaveTimeTo || !this.newRequest.reason) {
+                         Swal.fire({
+                            icon: 'error',
+                            title: 'ข้อมูลไม่ครบถ้วน',
+                            text: 'กรุณากรอกข้อมูลให้ครบทุกช่อง',
+                            confirmButtonColor: '#D32F2F'
+                        });
+                        return;
+                    }
+
+                    const requestData = {
+                        id: this.generateId(),
+                        studentName: this.newRequest.studentName,
+                        studentClass: this.newRequest.studentClass,
+                        leaveDate: this.newRequest.leaveDate,
+                        leaveTimeFrom: this.newRequest.leaveTimeFrom,
+                        leaveTimeTo: this.newRequest.leaveTimeTo,
+                        reason: this.newRequest.reason,
+                        status: 'รอพิจารณา',
+                        submissionDate: new Date().toISOString()
+                    };
+                    this.requests.push(requestData);
                     this.saveRequests();
-                    Swal.fire('ลบสำเร็จ!', 'คำขอถูกลบออกจากระบบแล้ว', 'success');
+                    this.newRequest = { studentName: '', studentClass: '', leaveDate: '', leaveTimeFrom: '', leaveTimeTo: '', reason: '' };
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'ยื่นคำขอสำเร็จ!',
+                        text: 'คำขอของคุณถูกส่งเข้าระบบแล้ว โปรดรอการพิจารณา',
+                        confirmButtonColor: '#D32F2F'
+                    }).then(() => {
+                        this.setView('statusView');
+                    });
+                },
+                loginAdmin() {
+                    if (this.adminCredentials.username === 'mlpyboss' && this.adminCredentials.password === '06052520') {
+                        this.isAdminLoggedIn = true;
+                        sessionStorage.setItem('isAdminLoggedIn', 'true');
+                        this.adminCredentials = { username: '', password: '' };
+                        this.setView('adminDashboard');
+                         Swal.fire({
+                            icon: 'success',
+                            title: 'เข้าสู่ระบบสำเร็จ',
+                            text: 'ยินดีต้อนรับผู้บริหาร',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            confirmButtonColor: '#D32F2F'
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เข้าสู่ระบบไม่สำเร็จ',
+                            text: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+                            confirmButtonColor: '#D32F2F'
+                        });
+                    }
+                },
+                logoutAdmin() {
+                     Swal.fire({
+                        title: 'ยืนยันการออกจากระบบ?',
+                        text: "คุณต้องการออกจากระบบผู้บริหารใช่หรือไม่?",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#D32F2F',
+                        cancelButtonColor: '#FFC107',
+                        confirmButtonText: 'ใช่, ออกจากระบบ',
+                        cancelButtonText: 'ยกเลิก'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.isAdminLoggedIn = false;
+                            sessionStorage.removeItem('isAdminLoggedIn');
+                            this.setView('statusView');
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'ออกจากระบบแล้ว',
+                                timer: 1500,
+                                showConfirmButton: false,
+                                confirmButtonColor: '#D32F2F'
+                            });
+                        }
+                    });
+                },
+                approveRequest(id) {
+                    Swal.fire({
+                        title: 'ยืนยันการอนุมัติ?',
+                        text: "คุณต้องการอนุมัติคำขอนี้ใช่หรือไม่?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#4CAF50',
+                        cancelButtonColor: '#757575',
+                        confirmButtonText: 'อนุมัติ',
+                        cancelButtonText: 'ยกเลิก'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const request = this.requests.find(req => req.id === id);
+                            if (request) {
+                                request.status = 'อนุมัติ';
+                                this.saveRequests();
+                                Swal.fire('อนุมัติแล้ว!', 'คำขอได้รับการอนุมัติเรียบร้อย', 'success');
+                            }
+                        }
+                    });
+                },
+                rejectRequest(id) {
+                    Swal.fire({
+                        title: 'ยืนยันการไม่อนุมัติ?',
+                        text: "คุณต้องการไม่อนุมัติคำขอนี้ใช่หรือไม่?",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#f44336',
+                        cancelButtonColor: '#757575',
+                        confirmButtonText: 'ไม่อนุมัติ',
+                        cancelButtonText: 'ยกเลิก'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const request = this.requests.find(req => req.id === id);
+                            if (request) {
+                                request.status = 'ไม่อนุมัติ';
+                                this.saveRequests();
+                                Swal.fire('ไม่อนุมัติแล้ว!', 'คำขอไม่ได้รับการอนุมัติ', 'info');
+                            }
+                        }
+                    });
+                },
+                deleteRequest(id) {
+                    Swal.fire({
+                        title: 'ยืนยันการลบ?',
+                        text: "คุณต้องการลบคำขอนี้ออกจากระบบใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้",
+                        icon: 'error',
+                        showCancelButton: true,
+                        confirmButtonColor: '#D32F2F',
+                        cancelButtonColor: '#757575',
+                        confirmButtonText: 'ใช่, ลบเลย!',
+                        cancelButtonText: 'ยกเลิก'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.requests = this.requests.filter(req => req.id !== id);
+                            this.saveRequests();
+                            Swal.fire('ลบสำเร็จ!', 'คำขอถูกลบออกจากระบบแล้ว', 'success');
+                        }
+                    });
+                },
+                getStatusClass(status) {
+                    if (status === 'รอพิจารณา') return 'status-pending';
+                    if (status === 'อนุมัติ') return 'status-approved';
+                    if (status === 'ไม่อนุมัติ') return 'status-rejected';
+                    return '';
                 }
-            });
-        },
-        getStatusClass(status) {
-            if (status === 'รอพิจารณา') return 'status-pending';
-            if (status === 'อนุมัติ') return 'status-approved';
-            if (status === 'ไม่อนุมัติ') return 'status-rejected';
-            return '';
-        }
-    },
-    mounted() {
-        this.loadRequests();
-        // Set initial view, check if admin was logged in
-        if (this.isAdminLoggedIn) {
-            this.setView('adminDashboard');
-        } else {
-            this.setView('statusView'); // Default to status view for general users
-        }
-    }
-});
+            },
+            mounted() {
+                this.loadRequests();
+                if (this.isAdminLoggedIn) {
+                    this.setView('adminDashboard');
+                } else {
+                    this.setView('statusView');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
