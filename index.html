@@ -66,18 +66,18 @@
 
         /* SweetAlert2 Form Styles */
         .swal2-html-container {
-            text-align: left !important; /* Align form elements left */
+            text-align: left !important;
         }
-        .swal2-input, .swal2-textarea, .swal2-select { /* General styling for swal inputs */
+        .swal2-input, .swal2-textarea, .swal2-select {
             font-family: 'Prompt', sans-serif !important;
             margin-bottom: 10px !important;
             border-radius: 4px !important;
             border: 1px solid #ddd !important;
             padding: 10px !important;
-            width: calc(100% - 20px) !important; /* Adjust width to account for padding */
+            width: calc(100% - 20px) !important;
             box-sizing: border-box !important;
         }
-        .swal2-label { /* Style for labels if you add them */
+        .swal2-label {
             display: block;
             margin-bottom: 5px;
             font-weight: 500;
@@ -85,10 +85,10 @@
         }
         .swal2-title {
             font-family: 'Prompt', sans-serif !important;
-            color: #D32F2F !important; /* Match h2 color */
+            color: #D32F2F !important;
         }
         .swal2-confirm {
-            background-color: #D32F2F !important; /* Red confirm button */
+            background-color: #D32F2F !important;
             font-family: 'Prompt', sans-serif !important;
         }
         .swal2-cancel {
@@ -98,12 +98,25 @@
             font-family: 'Prompt', sans-serif !important;
         }
         .swal2-popup {
-             width: auto !important; /* Allow SweetAlert to determine width */
-             max-width: 500px; /* Set a max-width for larger screens */
+             width: 600px !important; /* Default width */
+             max-width: 90% !important; /* Fallback for very small screens */
         }
-        @media (max-width: 600px) {
+        @media (min-width: 768px) {
             .swal2-popup {
-                width: 90% !important; /* Adjust for smaller screens */
+                width: 700px !important; /* Wider for tablets and desktops */
+                max-width: 700px !important;
+            }
+        }
+        @media (max-width: 767px) {
+            .swal2-popup {
+                width: 90vw !important; /* Use viewport width for mobile */
+                max-width: 90vw !important;
+            }
+        }
+        @media (max-width: 480px) {
+            .swal2-popup {
+                width: 95vw !important; /* Almost full width for very small mobile */
+                max-width: 95vw !important;
             }
         }
 
@@ -139,7 +152,7 @@
         /* Footer Styles */
         footer { background-color: #333; color: #aaa; text-align: center; padding: 15px; font-size: 0.9em; margin-top: auto; }
 
-        /* Responsive Design */
+        /* Responsive Design for main layout */
         @media (max-width: 992px) { .chart-wrapper { flex-basis: 100%; max-width: 100%; height: 320px; } }
         @media (max-width: 768px) {
             #system-name { font-size: 1.2em; } #logo { max-height: 60px; }
@@ -158,6 +171,7 @@
     </style>
 </head>
 <body>
+    <!-- HTML Structure and Vue Script remain the same as the previous version -->
     <div id="app">
         <header>
             <div class="header-content">
@@ -319,7 +333,7 @@
                     this.requests.forEach(req => { if (statusCounts.hasOwnProperty(req.status)) { statusCounts[req.status]++; } });
                     return statusCounts;
                 },
-                filteredRequests() { /* ... (เหมือนเดิม) ... */
+                filteredRequests() {
                     let tempRequests = this.requests;
                     if (this.searchTerm) {
                         const term = this.searchTerm.toLowerCase();
@@ -334,7 +348,7 @@
                     }
                     return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
                 },
-                filteredAdminRequests() { /* ... (เหมือนเดิม) ... */
+                filteredAdminRequests() {
                     let tempRequests = this.requests;
                     if (this.searchTermAdmin) {
                         const term = this.searchTermAdmin.toLowerCase();
@@ -354,7 +368,7 @@
                 currentView(newView, oldView) {
                     if (newView === 'dashboardView') {
                         this.$nextTick(() => { this.updateCharts(); });
-                    } else if (oldView === 'dashboardView' && newView !== 'dashboardView') { // Destroy charts if navigating away from dashboard
+                    } else if (oldView === 'dashboardView' && newView !== 'dashboardView') {
                         this.destroyCharts();
                     }
                 }
@@ -366,18 +380,15 @@
                     if (this.barChartInstance) { this.barChartInstance.destroy(); this.barChartInstance = null; }
                 },
                 setView(view) {
-                    // This method now primarily controls the main content area (dashboard, admin dashboard)
-                    // Modals are opened by separate methods.
                     this.currentView = view;
                     if (view === 'adminDashboard' && !this.isAdminLoggedIn) {
-                        // If trying to access admin dash directly without login, show login modal
-                        this.currentView = 'dashboardView'; // Revert to a safe view
+                        this.currentView = 'dashboardView';
                         this.openAdminLoginModal();
-                        Swal.fire({ icon: 'warning', title: 'กรุณาเข้าสู่ระบบ', text: 'คุณต้องเข้าสู่ระบบผู้บริหารเพื่อเข้าถึงหน้านี้', confirmButtonColor: '#D32F2F'});
+                        // No need for extra Swal here, modal handles it
                     }
                     if (view === 'dashboardView') { this.searchTerm = ''; this.filterStatus = ''; }
                 },
-                loadRequests() { /* ... (เหมือนเดิม) ... */
+                loadRequests() {
                     const storedRequests = localStorage.getItem('schoolLeaveRequests');
                     if (storedRequests) { this.requests = JSON.parse(storedRequests); }
                     if (sessionStorage.getItem('isAdminLoggedIn') === 'true') { this.isAdminLoggedIn = true; }
@@ -388,7 +399,7 @@
                 },
                 saveRequests() { localStorage.setItem('schoolLeaveRequests', JSON.stringify(this.requests)); },
                 generateId() { return '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36); },
-                formatDate(dateString, includeTime = false) { /* ... (เหมือนเดิม) ... */
+                formatDate(dateString, includeTime = false) {
                     if (!dateString) return '-';
                     const date = new Date(dateString);
                     const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -397,7 +408,6 @@
                 },
 
                 openRequestFormModal() {
-                    // Reset form data before opening
                     this.newRequest = { requesterName: '', leaveDate: '', leaveTimeFrom: '', leaveTimeTo: '', reason: '' };
                     Swal.fire({
                         title: '<i class="fas fa-file-alt"></i> ยื่นคำขออนุญาต',
@@ -447,7 +457,7 @@
                     });
                 },
 
-                submitRequest(formData) { // Modified to accept formData from modal
+                submitRequest(formData) {
                     const requestData = {
                         id: this.generateId(),
                         requesterName: formData.requesterName,
@@ -462,16 +472,15 @@
                     this.saveRequests();
                     Swal.fire({ icon: 'success', title: 'ยื่นคำขอสำเร็จ!', text: 'คำขอของคุณถูกส่งเข้าระบบแล้ว โปรดรอการพิจารณา', confirmButtonColor: '#D32F2F'})
                     .then(() => {
-                        if (this.currentView !== 'dashboardView') { // Ensure dashboard updates if not already current view
+                        if (this.currentView !== 'dashboardView') {
                            this.setView('dashboardView');
                         } else {
-                           this.conditionalUpdateCharts(); // Update charts if already on dashboard
+                           this.conditionalUpdateCharts();
                         }
                     });
                 },
 
                 openAdminLoginModal() {
-                    // Reset credentials before opening
                     this.adminCredentials = { username: '', password: '' };
                     Swal.fire({
                         title: '<i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบผู้บริหาร',
@@ -482,7 +491,7 @@
                             </div>
                             <div>
                                 <label for="swal-password" class="swal2-label">รหัสผ่าน:</label>
-                                <input id="swal-password" type="password" class="swal2-input" placeholder="รหัสผ่าน" value="${this.adminCredentials.password}">
+                                <input id="swal-password" type="password" class="swال2-input" placeholder="รหัสผ่าน" value="${this.adminCredentials.password}">
                             </div>
                         `,
                         confirmButtonText: 'เข้าสู่ระบบ',
@@ -505,29 +514,29 @@
                     });
                 },
 
-                loginAdmin(credentials) { // Modified to accept credentials from modal
+                loginAdmin(credentials) {
                     if (credentials.username === 'mlpyboss' && credentials.password === '06052520') {
                         this.isAdminLoggedIn = true; sessionStorage.setItem('isAdminLoggedIn', 'true');
-                        this.setView('adminDashboard'); // Navigate to admin dashboard view
+                        this.setView('adminDashboard');
                          Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ', text: 'ยินดีต้อนรับผู้บริหาร', timer: 1500, showConfirmButton: false });
                     } else {
                         Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', confirmButtonColor: '#D32F2F' })
                         .then(() => {
-                            this.openAdminLoginModal(); // Re-open login modal on failure
+                            this.openAdminLoginModal();
                         });
                     }
                 },
-                logoutAdmin() { /* ... (เหมือนเดิม) ... */
+                logoutAdmin() {
                      Swal.fire({ title: 'ยืนยันการออกจากระบบ?', text: "คุณต้องการออกจากระบบผู้บริหารใช่หรือไม่?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#D32F2F', cancelButtonColor: '#FFC107', confirmButtonText: 'ใช่, ออกจากระบบ', cancelButtonText: 'ยกเลิก'})
                      .then((result) => {
                         if (result.isConfirmed) {
                             this.isAdminLoggedIn = false; sessionStorage.removeItem('isAdminLoggedIn');
-                            this.setView('dashboardView'); // Go to main dashboard after logout
+                            this.setView('dashboardView');
                             Swal.fire({ icon: 'info', title: 'ออกจากระบบแล้ว', timer: 1500, showConfirmButton: false });
                         }
                     });
                 },
-                approveRequest(id) { /* ... (เหมือนเดิม) ... */
+                approveRequest(id) {
                     Swal.fire({ title: 'ยืนยันการอนุมัติ?', text: "คุณต้องการอนุมัติคำขอนี้ใช่หรือไม่?", icon: 'question', showCancelButton: true, confirmButtonColor: '#4CAF50', cancelButtonColor: '#757575', confirmButtonText: 'อนุมัติ', cancelButtonText: 'ยกเลิก'})
                     .then((result) => {
                         if (result.isConfirmed) {
@@ -536,7 +545,7 @@
                         }
                     });
                 },
-                rejectRequest(id) { /* ... (เหมือนเดิม) ... */
+                rejectRequest(id) {
                      Swal.fire({ title: 'ยืนยันการไม่อนุมัติ?', text: "คุณต้องการไม่อนุมัติคำขอนี้ใช่หรือไม่?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#f44336', cancelButtonColor: '#757575', confirmButtonText: 'ไม่อนุมัติ', cancelButtonText: 'ยกเลิก'})
                      .then((result) => {
                         if (result.isConfirmed) {
@@ -545,7 +554,7 @@
                         }
                     });
                 },
-                deleteRequest(id) { /* ... (เหมือนเดิม) ... */
+                deleteRequest(id) {
                     Swal.fire({ title: 'ยืนยันการลบ?', text: "คุณต้องการลบคำขอนี้ออกจากระบบใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้", icon: 'error', showCancelButton: true, confirmButtonColor: '#D32F2F', cancelButtonColor: '#757575', confirmButtonText: 'ใช่, ลบเลย!', cancelButtonText: 'ยกเลิก'})
                     .then((result) => {
                         if (result.isConfirmed) {
@@ -553,16 +562,16 @@
                         }
                     });
                 },
-                getStatusClass(status) { /* ... (เหมือนเดิม) ... */
+                getStatusClass(status) {
                     if (status === 'รอพิจารณา') return 'status-pending'; if (status === 'อนุมัติ') return 'status-approved'; if (status === 'ไม่อนุมัติ') return 'status-rejected'; return '';
                 },
-                updateCharts() { /* ... (เหมือนเดิม) ... */
+                updateCharts() {
                     this.$nextTick(() => {
                         this.createPieChart();
                         this.createBarChart();
                     });
                 },
-                createPieChart() { /* ... (เหมือนเดิม, รวมถึงการแสดง "ไม่มีข้อมูล") ... */
+                createPieChart() {
                     if (this.pieChartInstance) { this.pieChartInstance.destroy(); }
                     const ctx = document.getElementById('statusPieChart');
                     if (!ctx || !ctx.getContext('2d')) return;
@@ -577,7 +586,7 @@
                     const data = { labels: Object.keys(stats), datasets: [{ label: 'สถานะคำขอ', data: Object.values(stats), backgroundColor: ['#FFC107', '#4CAF50', '#D32F2F'], hoverOffset: 4 }] };
                     this.pieChartInstance = new Chart(ctx, { type: 'pie', data: data, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: {font: { family: 'Prompt'}}} } } });
                 },
-                createBarChart() { /* ... (เหมือนเดิม, รวมถึงการแสดง "ไม่มีข้อมูล") ... */
+                createBarChart() {
                     if (this.barChartInstance) { this.barChartInstance.destroy(); }
                     const ctx = document.getElementById('statusCountBarChart');
                      if (!ctx || !ctx.getContext('2d')) return;
@@ -593,19 +602,15 @@
                     this.barChartInstance = new Chart(ctx, { type: 'bar', data: data, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Prompt' } } }, x: { ticks: { font: { family: 'Prompt' }} } }, plugins: { legend: { display: false }, tooltip: { titleFont: { family: 'Prompt'}, bodyFont: { family: 'Prompt'}}} } });
                 }
             },
-            mounted() { /* ... (เหมือนเดิม) ... */
+            mounted() {
                 this.loadRequests();
                 if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                     this.isAdminLoggedIn = true;
-                     // If admin is logged in, and current view is not specific, default to admin dashboard.
-                    if (this.currentView !== 'adminDashboard' && this.currentView !== 'requestForm' && this.currentView !== 'adminLogin') {
-                        // this.setView('adminDashboard'); // Optionally direct to admin dashboard
-                        // Let's keep it on dashboardView by default or whatever was last active if not admin specific
-                    }
                 } else {
-                     this.currentView = 'dashboardView';
+                     this.currentView = 'dashboardView'; // Default to dashboard if not logged in
                 }
 
+                // Ensure charts are loaded if the initial view is dashboardView
                 if (this.currentView === 'dashboardView') {
                     this.$nextTick(() => this.updateCharts());
                 }
