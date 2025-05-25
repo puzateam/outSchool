@@ -10,7 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <style>
-        /* Global Styles */
         body { font-family: 'Prompt', sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; line-height: 1.6; }
         #app { display: flex; flex-direction: column; min-height: 100vh; }
         header { background: linear-gradient(135deg, #D32F2F, #FFC107); color: white; padding: 15px 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -48,36 +47,16 @@
         .btn-approve { background-color: #4CAF50; color: white; } .btn-approve:hover { background-color: #388E3C; }
         .btn-reject { background-color: #f44336; color: white; } .btn-reject:hover { background-color: #c62828; }
         .btn-delete { background-color: #757575; color: white; } .btn-delete:hover { background-color: #525252; }
-
-        /* Table Styles */
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px 10px; /* Reduced padding slightly */ vertical-align: middle; }
-        th {
-            background-color: #f0f0f0;
-            font-weight: 500;
-            color: #D32F2F;
-            text-align: center; /* Center align table headers */
-        }
-        td {
-             text-align: left; /* Default left align for data cells */
-        }
-        td.cell-center { /* Optional class to center specific td content */
-            text-align: center;
-        }
-        /* Specifically center the "ลำดับ" and "สถานะ" columns by default */
-        td:first-child, /* ลำดับ */
-        td:nth-last-child(2):not(:nth-last-child(1)) /* สถานะ on dashboard view */
-        {
-            text-align: center;
-        }
-        /* สถานะ on admin view (before last 'การดำเนินการ' column) */
-        table thead th:nth-last-child(3) + th + th ~ td:nth-last-child(3),
-        /* If only 6 columns (no actions), then status is 2nd to last */
-        table thead th:nth-last-child(2):not(:nth-last-child(3)) + th ~ td:nth-last-child(2)
-        {
-             /* This rule is complex due to varying column counts. Simpler to add a class or rely on the above. */
-        }
+        th, td { border: 1px solid #ddd; padding: 8px 10px; vertical-align: middle; }
+        th { background-color: #f0f0f0; font-weight: 500; color: #D32F2F; text-align: center; }
+        td { text-align: left; }
+        td.cell-center, td:first-child /*ลำดับ*/ { text-align: center; }
+        /* For status column to be centered */
+        td:nth-child(6) { text-align: center; } /* Status on dashboard view */
+        /* Status on admin view (6th from left if 'การดำเนินการ' is last) */
+        .admin-dashboard-table td:nth-child(5) { text-align: center; }
 
 
         tr:nth-child(even) { background-color: #f9f9f9; }
@@ -86,7 +65,6 @@
         .status-approved { background-color: #c8e6c9; }
         .status-rejected { background-color: #ffcdd2; }
         .no-data { text-align: center; font-style: italic; color: #777; padding: 20px; }
-
         .filter-search-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .search-input, .filter-select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: 'Prompt', sans-serif; }
         .search-input { flex-grow: 1; } .filter-select { min-width: 180px; }
@@ -151,8 +129,8 @@
                             <tr>
                                 <th>ลำดับ</th>
                                 <th>ชื่อ-สกุล ผู้ขอ</th>
-                                <th>วันที่ขออนุญาต</th> <!-- Changed -->
-                                <th>เวลาออก (ชม.:นาที)</th>   <!-- Changed -->
+                                <th>วันที่ขออนุญาต</th>
+                                <th>เวลาออก (ชม.:นาที)</th>
                                 <th>เหตุผล</th>
                                 <th>สถานะ</th>
                                 <th>วันที่ยื่น (ไทย)</th>
@@ -167,12 +145,12 @@
                             </tr>
                             <tr v-for="(req, index) in filteredRequests" :key="req.id" :class="getStatusClass(req.status)">
                                 <td>{{ index + 1 }}</td>
-                                <td style="text-align: left;">{{ req.requesterName }}</td>
-                                <td style="text-align: center;">{{ formatDate(req.leaveDate) }}</td>
-                                <td style="text-align: center;">{{ req.leaveTimeFrom }} - {{ req.leaveTimeTo }} น.</td>
-                                <td style="text-align: left;">{{ req.reason }}</td>
-                                <td :class="{'cell-center': true}">{{ req.status }}</td> <!-- Added class for centering status -->
-                                <td style="text-align: center;">{{ formatDate(req.submissionDate, true) }}</td>
+                                <td>{{ req.requesterName }}</td>
+                                <td class="cell-center">{{ formatDate(req.leaveDate) }}</td>
+                                <td class="cell-center">{{ formatTimeDisplay(req.leaveTimeFrom) }} - {{ formatTimeDisplay(req.leaveTimeTo) }} น.</td>
+                                <td>{{ req.reason }}</td>
+                                <td class="cell-center">{{ req.status }}</td>
+                                <td class="cell-center">{{ formatDate(req.submissionDate, true) }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -192,12 +170,12 @@
                     </select>
                 </div>
                 <div class="table-responsive">
-                    <table>
+                    <table class="admin-dashboard-table"> <!-- Added a class for more specific CSS if needed -->
                         <thead>
                             <tr>
                                 <th>ชื่อ-สกุล ผู้ขอ</th>
-                                <th>วันที่ขออนุญาต</th> <!-- Changed -->
-                                <th>เวลาออก (ชม.:นาที)</th>   <!-- Changed -->
+                                <th>วันที่ขออนุญาต</th>
+                                <th>เวลาออก (ชม.:นาที)</th>
                                 <th>เหตุผล</th>
                                 <th>สถานะ</th>
                                 <th>วันที่ยื่น (ไทย)</th>
@@ -212,13 +190,13 @@
                                 <td colspan="7" class="no-data">กำลังโหลดข้อมูล...</td>
                             </tr>
                             <tr v-for="req in filteredAdminRequests" :key="req.id" :class="getStatusClass(req.status)">
-                                <td style="text-align: left;">{{ req.requesterName }}</td>
-                                <td style="text-align: center;">{{ formatDate(req.leaveDate) }}</td>
-                                <td style="text-align: center;">{{ req.leaveTimeFrom }} - {{ req.leaveTimeTo }} น.</td>
-                                <td style="text-align: left;">{{ req.reason }}</td>
-                                <td :class="{'cell-center': true}">{{ req.status }}</td> <!-- Added class for centering status -->
-                                <td style="text-align: center;">{{ formatDate(req.submissionDate, true) }}</td>
-                                <td style="text-align: center;"> <!-- Center actions -->
+                                <td>{{ req.requesterName }}</td>
+                                <td class="cell-center">{{ formatDate(req.leaveDate) }}</td>
+                                <td class="cell-center">{{ formatTimeDisplay(req.leaveTimeFrom) }} - {{ formatTimeDisplay(req.leaveTimeTo) }} น.</td>
+                                <td>{{ req.reason }}</td>
+                                <td class="cell-center">{{ req.status }}</td>
+                                <td class="cell-center">{{ formatDate(req.submissionDate, true) }}</td>
+                                <td class="cell-center">
                                     <button v-if="req.status === 'รอพิจารณา'" @click="approveRequest(req.id)" class="btn btn-approve"><i class="fas fa-check"></i> อนุมัติ</button>
                                     <button v-if="req.status === 'รอพิจารณา'" @click="rejectRequest(req.id)" class="btn btn-reject"><i class="fas fa-times"></i> ไม่อนุมัติ</button>
                                     <button @click="deleteRequest(req.id)" class="btn btn-delete"><i class="fas fa-trash-alt"></i> ลบ</button>
@@ -236,9 +214,7 @@
     </div>
 
     <script>
-        // JavaScript (Vue.js) part remains the same as the previous version.
-        // No changes needed in JS for these specific display adjustments.
-        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrmn6WLJfs5q7ye3Mo95kEraPE8BuXdSHji0Ekwlr9JO20zPrIap0ujQnqAG2wah-W/exec';
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrmn6WLJfs5q7ye3Mo95kEraPE8BuXdSHji0Ekwlr9JO20zPrIap0ujQnqAG2wah-W/exec'; // ตรวจสอบ URL นี้ให้ถูกต้อง
 
         const app = new Vue({
             el: '#app',
@@ -311,18 +287,14 @@
                 setView(view) {
                     this.currentView = view;
                     if (view === 'adminDashboard' && !this.isAdminLoggedIn) {
-                        this.currentView = 'dashboardView';
-                        this.openAdminLoginModal();
+                        this.currentView = 'dashboardView'; this.openAdminLoginModal();
                     }
                     if (view === 'dashboardView') { this.searchTerm = ''; this.filterStatus = ''; }
                 },
                 async loadRequests() {
                     this.isLoading = true;
                     if (this.currentView === 'dashboardView' && !this.requests.length) {
-                        Swal.fire({
-                            title: 'กำลังโหลดข้อมูล...', text: 'กรุณารอสักครู่',
-                            allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }
-                        });
+                        Swal.fire({ title: 'กำลังโหลดข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
                     }
                     try {
                         const response = await fetch(APP_SCRIPT_URL);
@@ -331,58 +303,50 @@
                             throw new Error(`Network response was not ok: ${response.status} ${response.statusText}. Server said: ${errorText}`);
                         }
                         const data = await response.json();
-                        if (!Array.isArray(data)) {
-                            console.error("Data received is not an array:", data);
-                            throw new Error("รูปแบบข้อมูลที่ได้รับไม่ถูกต้อง");
-                        }
+                        if (!Array.isArray(data)) { throw new Error("รูปแบบข้อมูลที่ได้รับไม่ถูกต้อง"); }
+
                         this.requests = data.map(item => ({
                             id: item.ID || item.id,
                             requesterName: item['ชื่อ-สกุล ผู้ขออนุญาต'] || item.requesterName,
-                            leaveDate: item['วันที่ต้องการออก'] || item.leaveDate,
-                            leaveTimeFrom: item['ตั้งแต่เวลา'] || item.leaveTimeFrom,
-                            leaveTimeTo: item['ถึงเวลา'] || item.leaveTimeTo,
+                            leaveDate: item['วันที่ต้องการออก'] || item.leaveDate, // Expect YYYY-MM-DD from Apps Script
+                            leaveTimeFrom: item['ตั้งแต่เวลา'] || item.leaveTimeFrom, // Expect HH:mm string
+                            leaveTimeTo: item['ถึงเวลา'] || item.leaveTimeTo,     // Expect HH:mm string
                             reason: item['เหตุผล'] || item.reason,
                             status: item['สถานะ'] || item.status,
-                            submissionDate: item['วันที่ยื่น'] || item.submissionDate
+                            submissionDate: item['วันที่ยื่น'] || item.submissionDate // Expect ISO string
                         }));
-                        if (Swal.isVisible() && Swal.getTitle().textContent.includes('กำลังโหลดข้อมูล...')) {
-                           Swal.close();
-                        }
-                        if (this.currentView === 'dashboardView') {
-                            this.$nextTick(() => { this.updateCharts(); });
-                        }
+
+                        if (Swal.isVisible() && Swal.getTitle().textContent.includes('กำลังโหลดข้อมูล...')) { Swal.close(); }
+                        if (this.currentView === 'dashboardView') { this.$nextTick(() => { this.updateCharts(); }); }
                     } catch (error) {
                         console.error('Error loading requests:', error);
-                        if (Swal.isVisible() && Swal.getTitle().textContent.includes('กำลังโหลดข้อมูล...')) {
-                           Swal.close();
-                        }
+                        if (Swal.isVisible() && Swal.getTitle().textContent.includes('กำลังโหลดข้อมูล...')) { Swal.close(); }
                         Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: 'ไม่สามารถโหลดข้อมูลได้: ' + error.message, confirmButtonColor: '#D32F2F' });
-                    } finally {
-                        this.isLoading = false;
-                    }
+                    } finally { this.isLoading = false; }
                 },
                 generateId() { return '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36); },
                 formatDate(dateString, includeTime = false) {
                     if (!dateString) return '-';
                     try {
                         const date = new Date(dateString);
-                         if (isNaN(date.getTime())) {
-                            return dateString;
-                        }
-                        const options = {
-                            year: 'numeric', month: '2-digit', day: '2-digit',
-                            timeZone: 'Asia/Bangkok'
-                        };
+                        if (isNaN(date.getTime())) { return dateString; }
+                        const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Bangkok' };
                         if (includeTime) {
-                            options.hour = '2-digit'; options.minute = '2-digit';
-                            // options.second = '2-digit'; // No seconds for submission date
-                            options.hour12 = false;
+                            options.hour = '2-digit'; options.minute = '2-digit'; options.hour12 = false;
                         }
                         return new Intl.DateTimeFormat('th-TH', options).format(date);
-                    } catch (e) {
-                        console.error("Error formatting date:", e, "Input:", dateString);
-                        return dateString;
-                    }
+                    } catch (e) { console.error("Error formatting date:", e, "Input:", dateString); return dateString; }
+                },
+                formatTimeDisplay(timeString) { // Helper to ensure HH:mm format
+                    if (!timeString) return '';
+                    if (/^\d{2}:\d{2}$/.test(timeString)) { return timeString; } // Already HH:mm
+                    try { // If it's a full date string from sheet (should not happen with correct Apps Script)
+                        const date = new Date(timeString);
+                        if (isNaN(date.getTime())) return timeString;
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        return `${hours}:${minutes}`;
+                    } catch (e) { return timeString; }
                 },
                 openRequestFormModal() {
                     this.newRequest = { requesterName: '', leaveDate: '', leaveTimeFrom: '', leaveTimeTo: '', reason: '' };
@@ -391,8 +355,8 @@
                         html: `
                             <div><label for="swal-requesterName" class="swal2-label">ชื่อ-สกุล ผู้ขออนุญาต:</label><input id="swal-requesterName" class="swal2-input" placeholder="กรอกชื่อ-สกุล"></div>
                             <div><label for="swal-leaveDate" class="swal2-label">วันที่ต้องการออก:</label><input id="swal-leaveDate" type="date" class="swal2-input"></div>
-                            <div><label for="swal-leaveTimeFrom" class="swal2-label">ตั้งแต่เวลา:</label><input id="swal-leaveTimeFrom" type="time" class="swal2-input"></div>
-                            <div><label for="swal-leaveTimeTo" class="swal2-label">ถึงเวลา:</label><input id="swal-leaveTimeTo" type="time" class="swal2-input"></div>
+                            <div><label for="swal-leaveTimeFrom" class="swal2-label">ตั้งแต่เวลา (ชม.:นาที):</label><input id="swal-leaveTimeFrom" type="time" class="swal2-input"></div>
+                            <div><label for="swal-leaveTimeTo" class="swal2-label">ถึงเวลา (ชม.:นาที):</label><input id="swal-leaveTimeTo" type="time" class="swal2-input"></div>
                             <div><label for="swal-reason" class="swal2-label">เหตุผล:</label><textarea id="swal-reason" class="swal2-textarea" placeholder="ระบุเหตุผล" rows="3"></textarea></div>
                         `,
                         confirmButtonText: 'ยื่นคำขอ', focusConfirm: false, showCancelButton: true, cancelButtonText: 'ยกเลิก',
@@ -409,20 +373,18 @@
                             }
                             return data;
                         }
-                    }).then((result) => {
-                        if (result.isConfirmed) { this.submitRequestToSheet(result.value); }
-                    });
+                    }).then((result) => { if (result.isConfirmed) { this.submitRequestToSheet(result.value); }});
                 },
                 async submitRequestToSheet(formData) {
                     const requestData = {
                         id: this.generateId(),
                         requesterName: formData.requesterName,
-                        leaveDate: formData.leaveDate,
-                        leaveTimeFrom: formData.leaveTimeFrom,
-                        leaveTimeTo: formData.leaveTimeTo,
+                        leaveDate: formData.leaveDate, // YYYY-MM-DD string from date input
+                        leaveTimeFrom: formData.leaveTimeFrom, // HH:mm string from time input
+                        leaveTimeTo: formData.leaveTimeTo,     // HH:mm string from time input
                         reason: formData.reason,
                         status: 'รอพิจารณา',
-                        submissionDate: new Date().toISOString()
+                        submissionDate: new Date().toISOString() // Full ISO string for submission
                     };
                     Swal.fire({ title: 'กำลังบันทึกข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                     try {
