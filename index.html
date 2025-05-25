@@ -11,7 +11,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
-        /* CSS ทั้งหมดเหมือนเดิม */
         body { font-family: 'Prompt', sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; line-height: 1.6; }
         #app { display: flex; flex-direction: column; min-height: 100vh; }
         header { background: linear-gradient(135deg, #D32F2F, #FFC107); color: white; padding: 15px 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -224,59 +223,70 @@
 
         const app = new Vue({
             el: '#app',
-            data: { /* ... (data properties เหมือนเดิม) ... */ },
-            computed: { /* ... (computed properties เหมือนเดิม) ... */ },
-            watch: { /* ... (watchers เหมือนเดิม) ... */ },
+            data: {
+                currentView: 'dashboardView',
+                requests: [],
+                newRequest: { requesterName: '', requestType: 'ลา', leaveDate: '', leaveTimeFrom: '08:00', leaveTimeTo: '16:00', reason: '' },
+                adminCredentials: { username: '', password: '' },
+                isAdminLoggedIn: false,
+                searchTerm: '',
+                filterStatus: '',
+                searchTermAdmin: '',
+                filterTypeAdmin: '',
+                filterStatusAdmin: 'รอพิจารณา',
+                leaveDailyChartInstance: null,
+                permissionDailyChartInstance: null,
+                isLoading: false,
+                adminLoginModalActiveState: false
+            },
+            computed: {
+                leaveDailyChartDataCurrentMonth() { if (!this.requests || this.requests.length === 0) return {}; const dailyData = {}; const currentMonth = new Date().getMonth(); const currentYear = new Date().getFullYear(); const leaveRequests = this.requests.filter(req => req.requestType === 'ลา'); leaveRequests.forEach(req => { if (req.leaveDate) { try { const leaveDateObj = new Date(req.leaveDate); if (isNaN(leaveDateObj.getTime())) return; if (leaveDateObj.getMonth() === currentMonth && leaveDateObj.getFullYear() === currentYear) { const dayOfMonth = String(leaveDateObj.getDate()).padStart(2, '0'); if (!dailyData[dayOfMonth]) { dailyData[dayOfMonth] = { 'รอพิจารณา': 0, 'อนุมัติ': 0, 'ไม่อนุมัติ': 0 }; } if (dailyData[dayOfMonth].hasOwnProperty(req.status)) { dailyData[dayOfMonth][req.status]++; } } } catch (e) { console.warn("Error parsing leaveDate in chart (leave):", req.leaveDate, e); } } }); return dailyData; },
+                permissionDailyChartDataCurrentMonth() { if (!this.requests || this.requests.length === 0) return {}; const dailyData = {}; const currentMonth = new Date().getMonth(); const currentYear = new Date().getFullYear(); const permissionRequests = this.requests.filter(req => req.requestType === 'ขออนุญาตออกนอกสถานศึกษา'); permissionRequests.forEach(req => { if (req.leaveDate) { try { const leaveDateObj = new Date(req.leaveDate); if (isNaN(leaveDateObj.getTime())) return; if (leaveDateObj.getMonth() === currentMonth && leaveDateObj.getFullYear() === currentYear) { const dayOfMonth = String(leaveDateObj.getDate()).padStart(2, '0'); if (!dailyData[dayOfMonth]) { dailyData[dayOfMonth] = { 'รอพิจารณา': 0, 'อนุมัติ': 0, 'ไม่อนุมัติ': 0 }; } if (dailyData[dayOfMonth].hasOwnProperty(req.status)) { dailyData[dayOfMonth][req.status]++; } } } catch (e) { console.warn("Error parsing leaveDate in chart (permission):", req.leaveDate, e); } } }); return dailyData; },
+                filteredRequestsForTable() { let tempRequests = this.requests; if (this.searchTerm) { const term = this.searchTerm.toLowerCase(); tempRequests = tempRequests.filter(req => (req.requesterName && req.requesterName.toLowerCase().includes(term)) || (req.reason && req.reason.toLowerCase().includes(term)) ); } if (this.filterStatus) { tempRequests = tempRequests.filter(req => req.status === this.filterStatus); } return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate)); },
+                filteredAdminRequests() { let tempRequests = this.requests; if (this.searchTermAdmin) { const term = this.searchTermAdmin.toLowerCase(); tempRequests = tempRequests.filter(req => (req.requesterName && req.requesterName.toLowerCase().includes(term)) || (req.reason && req.reason.toLowerCase().includes(term)) ); } if (this.filterTypeAdmin) { tempRequests = tempRequests.filter(req => req.requestType === this.filterTypeAdmin); } if (this.filterStatusAdmin) { tempRequests = tempRequests.filter(req => req.status === this.filterStatusAdmin); } return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate)); }
+            },
+            watch: {
+                requests: {
+                    handler(newVal) {
+                        // console.log("Watcher: requests data changed. Length:", newVal.length);
+                        if (this.currentView === 'dashboardView') {
+                             this.$nextTick(() => { this.updateAllDashboardCharts(); });
+                        }
+                    },
+                    deep: true
+                },
+                currentView(newView, oldView) {
+                    // console.log("Watcher: currentView changed from", oldView, "to", newView);
+                    if (newView === 'dashboardView') {
+                        this.$nextTick(() => { this.updateAllDashboardCharts(); });
+                    } else if (oldView === 'dashboardView' && newView !== 'dashboardView') {
+                        this.destroyAllCharts();
+                    }
+                }
+            },
             methods: {
-                // ... (methods ส่วนใหญ่เหมือนเดิม) ...
+                updateAllDashboardCharts() { if (this.currentView === 'dashboardView') { if (this.requests && this.requests.length > 0) { this.createLeaveDailyChart(); this.createPermissionDailyChart(); } else { this.destroyAllCharts(); this.clearCanvasMessage('leaveDailyChart', 'ไม่มีข้อมูลการลาในเดือนนี้'); this.clearCanvasMessage('permissionDailyChart', 'ไม่มีข้อมูลการขออนุญาตฯ ในเดือนนี้'); } } else { this.destroyAllCharts(); } },
+                destroyAllCharts() { if (this.leaveDailyChartInstance) { this.leaveDailyChartInstance.destroy(); this.leaveDailyChartInstance = null; } if (this.permissionDailyChartInstance) { this.permissionDailyChartInstance.destroy(); this.permissionDailyChartInstance = null; } },
+                setView(view) { this.currentView = view; this.adminLoginModalActiveState = false; if (view === 'adminDashboard' && !this.isAdminLoggedIn) { this.currentView = 'dashboardView'; this.openAdminLoginModal(); } if (view === 'dashboardView') { this.searchTerm = ''; this.filterStatus = ''; this.$nextTick(() => this.updateAllDashboardCharts()); } },
                 async loadRequests() {
                     this.isLoading = true;
-                    console.log("Vue Method: loadRequests - STEP 1: Method STARTED.");
+                    // console.log("Vue Method: loadRequests - STEP 1: Method STARTED.");
                     let swalShown = false;
-                    if (this.currentView === 'dashboardView' && this.requests.length === 0) {
-                        Swal.fire({ title: 'กำลังโหลดข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-                        swalShown = true;
-                        console.log("Vue Method: loadRequests - STEP 2: Loading Swal shown.");
-                    }
+                    if (this.currentView === 'dashboardView' && (!this.requests || this.requests.length === 0)) { Swal.fire({ title: 'กำลังโหลดข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }}); swalShown = true; /* console.log("Vue Method: loadRequests - STEP 2: Loading Swal shown."); */ }
                     try {
-                        console.log("Vue Method: loadRequests - STEP 3: Attempting to fetch from:", APP_SCRIPT_URL);
+                        // console.log("Vue Method: loadRequests - STEP 3: Attempting to fetch from:", APP_SCRIPT_URL);
                         const response = await fetch(APP_SCRIPT_URL);
-                        console.log("Vue Method: loadRequests - STEP 4: Fetch response received. Status:", response.status);
-
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            console.error("Vue Method: loadRequests - STEP 5A: Network error. Status:", response.status, "Text:", errorText);
-                            throw new Error(`Network error: ${response.status} ${response.statusText}. Server response: ${errorText}`);
-                        }
-
+                        // console.log("Vue Method: loadRequests - STEP 4: Fetch response received. Status:", response.status);
+                        if (!response.ok) { const errorText = await response.text(); /* console.error(...) */ throw new Error(`Network error: ${response.status} ${response.statusText}. Server response: ${errorText}`); }
                         const responseText = await response.text();
-                        console.log("Vue Method: loadRequests - STEP 5B: Raw response text:", responseText);
-
+                        // console.log("Vue Method: loadRequests - STEP 5B: Raw response text:", responseText);
                         let data;
-                        try {
-                            data = JSON.parse(responseText);
-                            console.log("Vue Method: loadRequests - STEP 6: JSON Parsed successfully:", data);
-                        } catch (parseError) {
-                            console.error("Vue Method: loadRequests - STEP 6A: JSON Parse Error:", parseError, "Raw text was:", responseText);
-                            throw new Error("ข้อมูลจาก Server ไม่ถูกต้อง (JSON Parse Error). Raw: " + responseText.substring(0, 200) + "...");
-                        }
-
-                        if (typeof data === 'object' && data !== null && data.hasOwnProperty('error')) {
-                            console.error("Vue Method: loadRequests - STEP 7A: Apps Script explicit error:", data.error);
-                            throw new Error(`Apps Script Error: ${data.error}`);
-                        }
-
-                        if (!Array.isArray(data)) {
-                            console.error("Vue Method: loadRequests - STEP 7B: Parsed data is not an array:", data);
-                            throw new Error("รูปแบบข้อมูลที่ได้รับจากเซิร์ฟเวอร์ไม่ใช่อาร์เรย์");
-                        }
+                        try { data = JSON.parse(responseText); /* console.log("Vue Method: loadRequests - STEP 6: JSON Parsed successfully:", data); */ } catch (parseError) { /* console.error(...) */ throw new Error("ข้อมูลจาก Server ไม่ถูกต้อง (JSON Parse Error). Raw: " + responseText.substring(0, 200) + "..."); }
+                        if (typeof data === 'object' && data !== null && data.hasOwnProperty('error')) { /* console.error(...) */ throw new Error(`Apps Script Error: ${data.error}`); }
+                        if (!Array.isArray(data)) { /* console.error(...) */ throw new Error("รูปแบบข้อมูลที่ได้รับจากเซิร์ฟเวอร์ไม่ใช่อาร์เรย์"); }
                         this.requests = data;
-                        console.log("Vue Method: loadRequests - STEP 8: this.requests populated. Length:", this.requests.length, "Data Sample:", this.requests.length > 0 ? JSON.stringify(this.requests[0]) : "No requests");
-
-                        if (swalShown && Swal.isVisible() && Swal.getTitle().textContent.includes('กำลังโหลดข้อมูล...')) {
-                            Swal.close();
-                            console.log("Vue Method: loadRequests - STEP 9: Loading Swal closed.");
-                        }
+                        // console.log("Vue Method: loadRequests - STEP 8: this.requests populated. Length:", this.requests.length, "Data Sample:", this.requests.length > 0 ? JSON.stringify(this.requests[0]) : "No requests");
+                        if (swalShown && Swal.isVisible() && Swal.getTitle().textContent.includes('กำลังโหลดข้อมูล...')) { Swal.close(); /* console.log("Vue Method: loadRequests - STEP 9: Loading Swal closed."); */ }
                     } catch (error) {
                         console.error('Vue Method: loadRequests - STEP 10: CATCH block error:', error.message, error);
                         if (swalShown && Swal.isVisible() && Swal.getTitle().textContent.includes('กำลังโหลดข้อมูล...')) { Swal.close(); }
@@ -284,48 +294,40 @@
                         this.requests = [];
                     } finally {
                         this.isLoading = false;
-                        console.log("Vue Method: loadRequests - STEP 11: FINISHED. isLoading set to false.");
+                        // console.log("Vue Method: loadRequests - STEP 11: FINISHED. isLoading set to false.");
                         if (this.currentView === 'dashboardView') {
                             this.$nextTick(() => {
-                                console.log("Vue Method: loadRequests - FINALLY block, triggering chart update for dashboardView.");
+                                // console.log("Vue Method: loadRequests - FINALLY block, triggering chart update for dashboardView.");
                                 this.updateAllDashboardCharts();
                             });
                         }
                     }
                 },
-                openRequestFormModal() {
-                    console.log("Vue Method: openRequestFormModal called");
-                    this.newRequest = { requesterName: '', requestType: 'ลา', leaveDate: '', leaveTimeFrom: '08:00', leaveTimeTo: '16:00', reason: '' };
-                    Swal.fire({
-                        title: '<i class="fas fa-file-alt"></i> ยื่นคำขอ',
-                        html: `<div><label for="swal-requestType" class="swal2-label">ประเภท:</label><select id="swal-requestType" class="swal2-select"><option value="ลา">ลา</option><option value="ขออนุญาตออกนอกสถานศึกษา">ขออนุญาตออกนอกสถานศึกษา</option></select></div><div><label for="swal-requesterName" class="swal2-label">ชื่อ-สกุล ผู้ขอ:</label><input id="swal-requesterName" class="swal2-input" placeholder="กรอกชื่อ-สกุล"></div><div><label for="swal-leaveDate" class="swal2-label">วันที่ (ลา/ออกนอก):</label><input id="swal-leaveDate" type="date" class="swal2-input"></div><div><label for="swal-leaveTimeFrom" class="swal2-label">ตั้งแต่เวลา (ชม.:นาที):</label><input id="swal-leaveTimeFrom" type="time" class="swal2-input" value="08:00" readonly></div><div><label for="swal-leaveTimeTo" class="swal2-label">ถึงเวลา (ชม.:นาที):</label><input id="swal-leaveTimeTo" type="time" class="swal2-input" value="16:00" readonly></div><div><label for="swal-reason" class="swal2-label">เหตุผล:</label><textarea id="swal-reason" class="swal2-textarea" placeholder="ระบุเหตุผล" rows="3"></textarea></div>`,
-                        didOpen: () => { const typeSelect = document.getElementById('swal-requestType'); const timeFromInput = document.getElementById('swal-leaveTimeFrom'); const timeToInput = document.getElementById('swal-leaveTimeTo'); typeSelect.value = this.newRequest.requestType; typeSelect.addEventListener('change', (e) => { this.newRequest.requestType = e.target.value; if (e.target.value === 'ลา') { timeFromInput.value = '08:00'; timeToInput.value = '16:00'; timeFromInput.readOnly = true; timeToInput.readOnly = true; } else { timeFromInput.value = ''; timeToInput.value = ''; timeFromInput.readOnly = false; timeToInput.readOnly = false; } }); },
-                        confirmButtonText: 'ยื่นคำขอ', focusConfirm: false, showCancelButton: true, cancelButtonText: 'ยกเลิก',
-                        preConfirm: () => { const data = { requestType: document.getElementById('swal-requestType').value, requesterName: document.getElementById('swal-requesterName').value, leaveDate: document.getElementById('swal-leaveDate').value, leaveTimeFrom: document.getElementById('swal-leaveTimeFrom').value, leaveTimeTo: document.getElementById('swal-leaveTimeTo').value, reason: document.getElementById('swal-reason').value, }; if (!data.requestType || !data.requesterName || !data.leaveDate || !data.leaveTimeFrom || !data.leaveTimeTo || !data.reason) { Swal.showValidationMessage(`กรุณากรอกข้อมูลให้ครบทุกช่อง`); return false; } return data; }
-                    }).then((result) => { if (result.isConfirmed) { this.submitRequestToSheet(result.value); }});
-                },
-                 openAdminLoginModal() {
-                    console.log("Vue Method: openAdminLoginModal called");
-                    this.adminLoginModalActiveState = true;
-                    this.adminCredentials = { username: '', password: '' };
-                    Swal.fire({
-                        title: '<i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบผู้บริหาร',
-                        html: `<div><label for="swal-username" class="swal2-label">ชื่อผู้ใช้:</label><input id="swal-username" class="swal2-input" placeholder="ชื่อผู้ใช้" value="${this.adminCredentials.username}"></div><div><label for="swal-password" class="swal2-label">รหัสผ่าน:</label><input id="swal-password" type="password" class="swal2-input" placeholder="รหัสผ่าน" value="${this.adminCredentials.password}"></div>`,
-                        confirmButtonText: 'เข้าสู่ระบบ', focusConfirm: false, showCancelButton: true, cancelButtonText: 'ยกเลิก',
-                        preConfirm: () => { const username = document.getElementById('swal-username').value; const password = document.getElementById('swal-password').value; if (!username || !password) { Swal.showValidationMessage(`กรุณากรอกชื่อผู้ใช้และรหัสผ่าน`); return false; } return { username, password }; },
-                        willClose: () => { this.adminLoginModalActiveState = false; }
-                    }).then((result) => { if (result.isConfirmed) { this.loginAdmin(result.value); }});
-                },
-                 // ... (ส่วนที่เหลือของ methods เหมือนเดิม) ...
+                generateId() { return '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36); },
+                formatDate(dateString, includeTime = false) { if (!dateString) return '-'; try { const date = new Date(dateString); if (isNaN(date.getTime())) { return dateString; } const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Bangkok' }; if (includeTime) { options.hour = '2-digit'; options.minute = '2-digit'; options.hour12 = false; } return new Intl.DateTimeFormat('th-TH', options).format(date); } catch (e) { /* console.warn("formatDate error:", dateString, e); */ return dateString; } },
+                formatTimeDisplay(timeString) { if (!timeString || typeof timeString !== 'string') { return ''; } if (/^\d{2}:\d{2}(:\d{2})?$/.test(timeString.split('.')[0])) { return timeString.split('.')[0].slice(0,5); } try { const date = new Date(`1970-01-01T${timeString.split('.')[0]}Z`); if (isNaN(date.getTime())) { const fullDate = new Date(timeString); if(isNaN(fullDate.getTime())) return timeString; return `${String(fullDate.getHours()).padStart(2, '0')}:${String(fullDate.getMinutes()).padStart(2, '0')}`; } return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`; } catch (e) { /* console.warn("formatTimeDisplay error:", timeString, e); */ return timeString; } },
+                openRequestFormModal() { /* console.log("Vue Method: openRequestFormModal called"); */ this.newRequest = { requesterName: '', requestType: 'ลา', leaveDate: '', leaveTimeFrom: '08:00', leaveTimeTo: '16:00', reason: '' }; Swal.fire({ title: '<i class="fas fa-file-alt"></i> ยื่นคำขอ', html: `<div><label for="swal-requestType" class="swal2-label">ประเภท:</label><select id="swal-requestType" class="swal2-select"><option value="ลา">ลา</option><option value="ขออนุญาตออกนอกสถานศึกษา">ขออนุญาตออกนอกสถานศึกษา</option></select></div><div><label for="swal-requesterName" class="swal2-label">ชื่อ-สกุล ผู้ขอ:</label><input id="swal-requesterName" class="swal2-input" placeholder="กรอกชื่อ-สกุล"></div><div><label for="swal-leaveDate" class="swal2-label">วันที่ (ลา/ออกนอก):</label><input id="swal-leaveDate" type="date" class="swal2-input"></div><div><label for="swal-leaveTimeFrom" class="swal2-label">ตั้งแต่เวลา (ชม.:นาที):</label><input id="swal-leaveTimeFrom" type="time" class="swal2-input" value="08:00" readonly></div><div><label for="swal-leaveTimeTo" class="swal2-label">ถึงเวลา (ชม.:นาที):</label><input id="swal-leaveTimeTo" type="time" class="swal2-input" value="16:00" readonly></div><div><label for="swal-reason" class="swal2-label">เหตุผล:</label><textarea id="swal-reason" class="swal2-textarea" placeholder="ระบุเหตุผล" rows="3"></textarea></div>`, didOpen: () => { const typeSelect = document.getElementById('swal-requestType'); const timeFromInput = document.getElementById('swal-leaveTimeFrom'); const timeToInput = document.getElementById('swal-leaveTimeTo'); typeSelect.value = this.newRequest.requestType; typeSelect.addEventListener('change', (e) => { this.newRequest.requestType = e.target.value; if (e.target.value === 'ลา') { timeFromInput.value = '08:00'; timeToInput.value = '16:00'; timeFromInput.readOnly = true; timeToInput.readOnly = true; } else { timeFromInput.value = ''; timeToInput.value = ''; timeFromInput.readOnly = false; timeToInput.readOnly = false; } }); }, confirmButtonText: 'ยื่นคำขอ', focusConfirm: false, showCancelButton: true, cancelButtonText: 'ยกเลิก', preConfirm: () => { const data = { requestType: document.getElementById('swal-requestType').value, requesterName: document.getElementById('swal-requesterName').value, leaveDate: document.getElementById('swal-leaveDate').value, leaveTimeFrom: document.getElementById('swal-leaveTimeFrom').value, leaveTimeTo: document.getElementById('swal-leaveTimeTo').value, reason: document.getElementById('swal-reason').value, }; if (!data.requestType || !data.requesterName || !data.leaveDate || !data.leaveTimeFrom || !data.leaveTimeTo || !data.reason) { Swal.showValidationMessage(`กรุณากรอกข้อมูลให้ครบทุกช่อง`); return false; } return data; } }).then((result) => { if (result.isConfirmed) { this.submitRequestToSheet(result.value); }}); },
+                async submitRequestToSheet(formData) { const requestData = { id: this.generateId(), requesterName: formData.requesterName, requestType: formData.requestType, leaveDate: formData.leaveDate, leaveTimeFrom: formData.leaveTimeFrom, leaveTimeTo: formData.leaveTimeTo, reason: formData.reason, status: 'รอพิจารณา', submissionDate: new Date().toISOString() }; Swal.fire({ title: 'กำลังบันทึก...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } }); try { const response = await fetch(APP_SCRIPT_URL, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'create', data: requestData }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); const resultText = await response.text(); const result = JSON.parse(resultText); if (result.success) { Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: 'ส่งคำขอเข้าระบบแล้ว', confirmButtonColor: '#D32F2F' }); this.loadRequests(); } else { throw new Error(result.message || 'บันทึกข้อมูลไม่ได้'); } } catch (error) { console.error('Error submit:', error); Swal.fire({ icon: 'error', title: 'ผิดพลาด!', text: 'บันทึกข้อมูลไม่ได้: ' + error.message, confirmButtonColor: '#D32F2F' }); } },
+                openAdminLoginModal() { /* console.log("Vue Method: openAdminLoginModal called"); */ this.adminLoginModalActiveState = true; this.adminCredentials = { username: '', password: '' }; Swal.fire({ title: '<i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบผู้บริหาร', html: `<div><label for="swal-username" class="swal2-label">ชื่อผู้ใช้:</label><input id="swal-username" class="swal2-input" placeholder="ชื่อผู้ใช้" value="${this.adminCredentials.username}"></div><div><label for="swal-password" class="swal2-label">รหัสผ่าน:</label><input id="swal-password" type="password" class="swal2-input" placeholder="รหัสผ่าน" value="${this.adminCredentials.password}"></div>`, confirmButtonText: 'เข้าสู่ระบบ', focusConfirm: false, showCancelButton: true, cancelButtonText: 'ยกเลิก', preConfirm: () => { const username = document.getElementById('swal-username').value; const password = document.getElementById('swal-password').value; if (!username || !password) { Swal.showValidationMessage(`กรุณากรอกชื่อผู้ใช้และรหัสผ่าน`); return false; } return { username, password }; }, willClose: () => { this.adminLoginModalActiveState = false; } }).then((result) => { if (result.isConfirmed) { this.loginAdmin(result.value); }}); },
+                loginAdmin(credentials) { if (credentials.username === 'mlpyboss' && credentials.password === '06052520') { this.isAdminLoggedIn = true; sessionStorage.setItem('isAdminLoggedIn', 'true'); this.setView('adminDashboard'); Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ', text: 'ยินดีต้อนรับผู้บริหาร', timer: 1500, showConfirmButton: false }); } else { Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', confirmButtonColor: '#D32F2F' }).then(() => { this.openAdminLoginModal(); }); } },
+                logoutAdmin() { this.isAdminLoggedIn = false; sessionStorage.removeItem('isAdminLoggedIn'); this.setView('dashboardView'); Swal.fire({ icon: 'info', title: 'ออกจากระบบแล้ว', timer: 1500, showConfirmButton: false }); },
+                async updateRequestStatusInSheet(id, newStatus, successMessage, actionVerb) { Swal.fire({ title: `กำลัง${actionVerb}...`, text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } }); try { const response = await fetch(APP_SCRIPT_URL, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'updateStatus', id: id, status: newStatus }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); const resultText = await response.text(); const result = JSON.parse(resultText); if (result.success) { Swal.fire({icon: 'success', title: successMessage, confirmButtonColor: '#D32F2F'}); this.loadRequests(); } else { throw new Error(result.message || `ไม่สามารถ${actionVerb}ได้`); } } catch (error) { console.error(`Error ${actionVerb} request:`, error); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: `ไม่สามารถ${actionVerb}สถานะ: ` + error.message, confirmButtonColor: '#D32F2F' }); } },
+                approveRequest(id) { Swal.fire({ title: 'ยืนยันการอนุมัติ?', text: "คุณต้องการอนุมัติคำขอนี้ใช่หรือไม่?", icon: 'question', showCancelButton: true, confirmButtonColor: '#4CAF50', cancelButtonColor: '#757575', confirmButtonText: 'อนุมัติ', cancelButtonText: 'ยกเลิก'}).then((result) => { if (result.isConfirmed) { this.updateRequestStatusInSheet(id, 'อนุมัติ', 'อนุมัติแล้ว!', 'อนุมัติ'); } }); },
+                rejectRequest(id) { Swal.fire({ title: 'ยืนยันการไม่อนุมัติ?', text: "คุณต้องการไม่อนุมัติคำขอนี้ใช่หรือไม่?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#f44336', cancelButtonColor: '#757575', confirmButtonText: 'ไม่อนุมัติ', cancelButtonText: 'ยกเลิก'}).then((result) => { if (result.isConfirmed) { this.updateRequestStatusInSheet(id, 'ไม่อนุมัติ', 'ไม่อนุมัติแล้ว!', 'ไม่อนุมัติ'); } }); },
+                async deleteRequestFromSheet(id) { Swal.fire({ title: 'กำลังลบข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } }); try { const response = await fetch(APP_SCRIPT_URL, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'delete', id: id }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); const resultText = await response.text(); const result = JSON.parse(resultText); if (result.success) { Swal.fire({icon: 'success', title: 'ลบสำเร็จ!', text: 'คำขอถูกลบออกจากระบบแล้ว', confirmButtonColor: '#D32F2F'}); this.loadRequests(); } else { throw new Error(result.message || 'ไม่สามารถลบข้อมูลได้'); } } catch (error) { console.error('Error deleting request:', error); Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: 'ไม่สามารถลบข้อมูล: ' + error.message, confirmButtonColor: '#D32F2F' }); } },
+                deleteRequest(id) { Swal.fire({ title: 'ยืนยันการลบ?', text: "คุณต้องการลบคำขอนี้ออกจากระบบใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้", icon: 'error', showCancelButton: true, confirmButtonColor: '#D32F2F', cancelButtonColor: '#757575', confirmButtonText: 'ใช่, ลบเลย!', cancelButtonText: 'ยกเลิก'}).then((result) => { if (result.isConfirmed) { this.deleteRequestFromSheet(id); } }); },
+                getStatusClass(status) { if (status === 'รอพิจารณา') return 'status-pending'; if (status === 'อนุมัติ') return 'status-approved'; if (status === 'ไม่อนุมัติ') return 'status-rejected'; return ''; },
+                clearCanvasMessage(canvasId, message) { const ctx = document.getElementById(canvasId); if (ctx && ctx.getContext('2d')) { const context = ctx.getContext('2d'); context.clearRect(0, 0, ctx.width, ctx.height); context.font = "16px Prompt"; context.fillStyle = "#888"; context.textAlign = "center"; context.fillText(message, ctx.width / 2, ctx.height / 2); } },
+                createDailyBarChart(canvasId, chartTitle, chartData, instanceTracker) { if (this[instanceTracker]) { this[instanceTracker].destroy(); } const ctx = document.getElementById(canvasId); if (!ctx || !ctx.getContext('2d')) return; const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate(); const labels = Array.from({ length: daysInMonth }, (_, i) => String(i + 1).padStart(2, '0')); let noDataForChart = true; if (Object.keys(chartData).length > 0) { for (const day in chartData) { if (Object.values(chartData[day]).some(val => val > 0)) { noDataForChart = false; break; } } } if (noDataForChart && labels.every(day => !chartData[day] || Object.values(chartData[day]).every(v=> v===0) )) { this.clearCanvasMessage(canvasId, `ไม่มีข้อมูลสำหรับ "${chartTitle}" ในเดือนนี้`); return; } const datasets = [ { label: 'รอพิจารณา', data: labels.map(day => (chartData[day] ? chartData[day]['รอพิจารณา'] : 0) || 0), backgroundColor: 'rgba(255, 205, 86, 0.85)' }, { label: 'อนุมัติ', data: labels.map(day => (chartData[day] ? chartData[day]['อนุมัติ'] : 0) || 0), backgroundColor: 'rgba(75, 192, 192, 0.85)' }, { label: 'ไม่อนุมัติ', data: labels.map(day => (chartData[day] ? chartData[day]['ไม่อนุมัติ'] : 0) || 0), backgroundColor: 'rgba(255, 99, 132, 0.85)' } ]; this[instanceTracker] = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: {font: { family: 'Prompt'}}}, tooltip: { titleFont: { family: 'Prompt'}, bodyFont: { family: 'Prompt'}} }, scales: { x: { stacked: true, ticks: { font: { family: 'Prompt' } }, title: { display: true, text: 'วันที่ในเดือนปัจจุบัน', font: { family: 'Prompt' } } }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Prompt' } } } } } }); },
+                createLeaveDailyChart() { this.createDailyBarChart('leaveDailyChart', 'การลา', this.leaveDailyChartDataCurrentMonth, 'leaveDailyChartInstance'); },
+                createPermissionDailyChart() { this.createDailyBarChart('permissionDailyChart', 'การขออนุญาตออกนอกฯ', this.permissionDailyChartDataCurrentMonth, 'permissionDailyChartInstance'); }
             },
             async mounted() {
                 console.log("Vue instance mounted.");
                 if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                     this.isAdminLoggedIn = true;
                 }
-                // Always set to dashboardView initially or if not admin
-                // Login status will determine if adminDashboard menu is shown or admin login modal is triggered by setView
-                this.currentView = 'dashboardView';
+                this.currentView = 'dashboardView'; // Always start at dashboard
                 await this.loadRequests();
             }
         });
