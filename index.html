@@ -11,40 +11,17 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <style>
         /* Global Styles */
-        body {
-            font-family: 'Prompt', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            color: #333;
-            line-height: 1.6;
-        }
-
-        #app {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+        body { font-family: 'Prompt', sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; line-height: 1.6; }
+        #app { display: flex; flex-direction: column; min-height: 100vh; }
 
         /* Header Styles */
-        header {
-            background: linear-gradient(135deg, #D32F2F, #FFC107);
-            color: white;
-            padding: 15px 20px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+        header { background: linear-gradient(135deg, #D32F2F, #FFC107); color: white; padding: 15px 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .header-content { display: flex; flex-direction: column; align-items: center; max-width: 1200px; margin: 0 auto; }
         #logo { max-height: 70px; width: auto; margin-bottom: 10px; border-radius: 5px; }
         #system-name { font-size: 1.4em; margin: 0; font-weight: 500; line-height: 1.2; }
 
         /* Navigation Styles */
-        nav {
-            background-color: #ffffff;
-            color: #333;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border-bottom: 1px solid #eee;
-        }
+        nav { background-color: #ffffff; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-bottom: 1px solid #eee; }
         nav ul { list-style-type: none; padding: 0; margin: 0; display: flex; justify-content: center; flex-wrap: wrap; }
         nav ul li a { display: block; color: #333; text-align: center; padding: 14px 20px; text-decoration: none; font-weight: 500; transition: background-color 0.3s, color 0.3s; border-bottom: 3px solid transparent; }
         nav ul li a:hover, nav ul li a.active { color: #D32F2F; background-color: #FFF9C4; border-bottom-color: #D32F2F; }
@@ -65,260 +42,66 @@
         .chart-canvas-container { flex-grow: 1; position: relative; overflow: hidden; }
 
         /* SweetAlert2 Form Styles */
-        .swal2-html-container {
-            text-align: left !important;
-        }
-        .swal2-input, .swal2-textarea, .swal2-select {
-            font-family: 'Prompt', sans-serif !important;
-            margin-bottom: 10px !important;
-            border-radius: 4px !important;
-            border: 1px solid #ddd !important;
-            padding: 10px !important;
-            width: calc(100% - 20px) !important;
-            box-sizing: border-box !important;
-        }
-        .swal2-label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #555;
-        }
-        .swal2-title {
-            font-family: 'Prompt', sans-serif !important;
-            color: #D32F2F !important;
-        }
-        .swal2-confirm {
-            background-color: #D32F2F !important;
-            font-family: 'Prompt', sans-serif !important;
-        }
-        .swal2-cancel {
-            font-family: 'Prompt', sans-serif !important;
-        }
-        .swal2-validation-message {
-            font-family: 'Prompt', sans-serif !important;
-        }
-        .swal2-popup {
-             width: 600px !important; /* Default width */
-             max-width: 90% !important; /* Fallback for very small screens */
-        }
-        @media (min-width: 768px) {
-            .swal2-popup {
-                width: 700px !important; /* Wider for tablets and desktops */
-                max-width: 700px !important;
-            }
-        }
-        @media (max-width: 767px) {
-            .swal2-popup {
-                width: 90vw !important; /* Use viewport width for mobile */
-                max-width: 90vw !important;
-            }
-        }
-        @media (max-width: 480px) {
-            .swal2-popup {
-                width: 95vw !important; /* Almost full width for very small mobile */
-                max-width: 95vw !important;
-            }
-        }
+        .swal2-html-container { text-align: left !important; }
+        .swal2-input, .swal2-textarea, .swal2-select { font-family: 'Prompt', sans-serif !important; margin-bottom: 10px !important; border-radius: 4px !important; border: 1px solid #ddd !important; padding: 10px !important; width: calc(100% - 20px) !important; box-sizing: border-box !important; }
+        .swal2-label { display: block; margin-bottom: 5px; font-weight: 500; color: #555; }
+        .swal2-title { font-family: 'Prompt', sans-serif !important; color: #D32F2F !important; }
+        .swal2-confirm { background-color: #D32F2F !important; font-family: 'Prompt', sans-serif !important; }
+        .swal2-cancel { font-family: 'Prompt', sans-serif !important; }
+        .swal2-validation-message { font-family: 'Prompt', sans-serif !important; }
+        .swal2-popup { width: 600px !important; max-width: 90% !important; }
+        @media (min-width: 768px) { .swal2-popup { width: 700px !important; max-width: 700px !important; } }
+        @media (max-width: 767px) { .swal2-popup { width: 90vw !important; max-width: 90vw !important; } }
+        @media (max-width: 480px) { .swal2-popup { width: 95vw !important; max-width: 95vw !important; } }
 
-
-        /* Button Styles (Kept for Admin Dashboard Actions) */
+        /* Button Styles (Admin Dashboard Actions) */
         .btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Prompt', sans-serif; font-size: 1em; transition: background-color 0.3s, transform 0.1s; margin-right: 5px; margin-bottom: 5px; }
         .btn:active { transform: translateY(1px); }
-        .btn-approve { background-color: #4CAF50; color: white; }
-        .btn-approve:hover { background-color: #388E3C; }
-        .btn-reject { background-color: #f44336; color: white; }
-        .btn-reject:hover { background-color: #c62828; }
-        .btn-delete { background-color: #757575; color: white; }
-        .btn-delete:hover { background-color: #525252; }
+        .btn-approve { background-color: #4CAF50; color: white; } .btn-approve:hover { background-color: #388E3C; }
+        .btn-reject { background-color: #f44336; color: white; } .btn-reject:hover { background-color: #c62828; }
+        .btn-delete { background-color: #757575; color: white; } .btn-delete:hover { background-color: #525252; }
 
         /* Table Styles */
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: middle; }
         th { background-color: #f0f0f0; font-weight: 500; color: #D32F2F; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        tr:hover { background-color: #f1f1f1; }
-        .status-pending { background-color: #fff9c4; }
-        .status-approved { background-color: #c8e6c9; }
-        .status-rejected { background-color: #ffcdd2; }
+        tr:nth-child(even) { background-color: #f9f9f9; } tr:hover { background-color: #f1f1f1; }
+        .status-pending { background-color: #fff9c4; } .status-approved { background-color: #c8e6c9; } .status-rejected { background-color: #ffcdd2; }
         .no-data { text-align: center; font-style: italic; color: #777; padding: 20px; }
 
         /* Filter and Search */
         .filter-search-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .search-input, .filter-select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: 'Prompt', sans-serif; }
-        .search-input { flex-grow: 1; }
-        .filter-select { min-width: 180px; }
+        .search-input { flex-grow: 1; } .filter-select { min-width: 180px; }
 
         /* Footer Styles */
         footer { background-color: #333; color: #aaa; text-align: center; padding: 15px; font-size: 0.9em; margin-top: auto; }
 
         /* Responsive Design for main layout */
         @media (max-width: 992px) { .chart-wrapper { flex-basis: 100%; max-width: 100%; height: 320px; } }
-        @media (max-width: 768px) {
-            #system-name { font-size: 1.2em; } #logo { max-height: 60px; }
-            nav ul { flex-direction: column; } nav ul li a { padding: 12px 10px; border-bottom-width: 2px; }
-            .charts-container { flex-direction: column; }
-            .chart-wrapper { min-width: unset; width: 100%; max-width: 100%; height: 300px; }
-            .filter-search-container { flex-direction: column; }
-            .search-input, .filter-select { width: 100%; }
-            .btn { width: 100%; margin-bottom: 10px; margin-right: 0;}
-            .table-responsive td, .table-responsive th { font-size: 0.9em; padding: 8px;}
-        }
-        @media (max-width: 480px) {
-            #system-name { font-size: 1em; } #logo { max-height: 50px; }
-            .view-container h2 { font-size: 1.3em; } .chart-wrapper { height: 280px; }
-        }
+        @media (max-width: 768px) { #system-name { font-size: 1.2em; } #logo { max-height: 60px; } nav ul { flex-direction: column; } nav ul li a { padding: 12px 10px; border-bottom-width: 2px; } .charts-container { flex-direction: column; } .chart-wrapper { min-width: unset; width: 100%; max-width: 100%; height: 300px; } .filter-search-container { flex-direction: column; } .search-input, .filter-select { width: 100%; } .btn { width: 100%; margin-bottom: 10px; margin-right: 0;} .table-responsive td, .table-responsive th { font-size: 0.9em; padding: 8px;} }
+        @media (max-width: 480px) { #system-name { font-size: 1em; } #logo { max-height: 50px; } .view-container h2 { font-size: 1.3em; } .chart-wrapper { height: 280px; } }
     </style>
 </head>
 <body>
-    <!-- HTML Structure and Vue Script remain the same as the previous version -->
     <div id="app">
-        <header>
-            <div class="header-content">
-                <img src='https://i.postimg.cc/d3PbrGqC/logo-School.png' border='0' alt='logo-School' id="logo"/>
-                <h1 id="system-name">ระบบขออนุญาตออกนอกสถานศึกษา<br>ของโรงเรียนชุมชนบ้านแม่หละป่าป๋วย</h1>
-            </div>
-        </header>
-
-        <nav>
-            <ul>
-                <li><a href="#" @click.prevent="setView('dashboardView')" :class="{active: currentView === 'dashboardView'}">แดชบอร์ด</a></li>
-                <li><a href="#" @click.prevent="openRequestFormModal" :class="{active: currentView === 'requestForm'}">ยื่นขออนุญาต</a></li>
-                <li>
-                    <a v-if="!isAdminLoggedIn" href="#" @click.prevent="openAdminLoginModal" :class="{active: currentView === 'adminLogin'}">ผู้บริหาร</a>
-                    <a v-if="isAdminLoggedIn" href="#" @click.prevent="setView('adminDashboard')" :class="{active: currentView === 'adminDashboard'}">แดชบอร์ดผู้บริหาร</a>
-                </li>
-                <li v-if="isAdminLoggedIn" class="admin-logout"><a href="#" @click.prevent="logoutAdmin">ออกจากระบบผู้บริหาร</a></li>
-            </ul>
-        </nav>
-
-        <main>
-            <!-- View: Dashboard -->
-            <div v-if="currentView === 'dashboardView'" class="view-container">
-                <h2><i class="fas fa-tachometer-alt"></i> แดชบอร์ด - ภาพรวมคำขออนุญาต</h2>
-                <div class="charts-container">
-                    <div class="chart-wrapper">
-                        <h3>สถิติสถานะคำขอ (ภาพรวม)</h3>
-                        <div class="chart-canvas-container">
-                           <canvas id="statusPieChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-wrapper">
-                        <h3>จำนวนคำขอตามสถานะ</h3>
-                         <div class="chart-canvas-container">
-                            <canvas id="statusCountBarChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="filter-search-container">
-                    <input type="text" v-model="searchTerm" placeholder="ค้นหาชื่อผู้ขอ, เหตุผล, สถานะ..." class="search-input">
-                    <select v-model="filterStatus" class="filter-select">
-                        <option value="">สถานะทั้งหมด</option>
-                        <option value="รอพิจารณา">รอพิจารณา</option>
-                        <option value="อนุมัติ">อนุมัติ</option>
-                        <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
-                    </select>
-                </div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ลำดับ</th>
-                                <th>ชื่อ-สกุล ผู้ขอ</th>
-                                <th>วันที่/เวลาออก</th>
-                                <th>เหตุผล</th>
-                                <th>สถานะ</th>
-                                <th>วันที่ยื่น</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="filteredRequests.length === 0">
-                                <td colspan="6" class="no-data">ไม่พบข้อมูลคำขอ</td>
-                            </tr>
-                            <tr v-for="(req, index) in filteredRequests" :key="req.id" :class="getStatusClass(req.status)">
-                                <td>{{ index + 1 }}</td>
-                                <td>{{ req.requesterName }}</td>
-                                <td>{{ formatDate(req.leaveDate) }} ({{ req.leaveTimeFrom }} - {{ req.leaveTimeTo }})</td>
-                                <td>{{ req.reason }}</td>
-                                <td>{{ req.status }}</td>
-                                <td>{{ formatDate(req.submissionDate, true) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- FORMS ARE NOW MODALS - NO LONGER INLINE VIEWS -->
-
-            <!-- View: Admin Dashboard -->
-            <div v-if="currentView === 'adminDashboard' && isAdminLoggedIn" class="view-container">
-                <h2><i class="fas fa-user-shield"></i> แดชบอร์ดผู้บริหาร - จัดการคำขอ</h2>
-                 <div class="filter-search-container">
-                    <input type="text" v-model="searchTermAdmin" placeholder="ค้นหาชื่อผู้ขอ, เหตุผล..." class="search-input">
-                    <select v-model="filterStatusAdmin" class="filter-select">
-                        <option value="">สถานะทั้งหมด</option>
-                        <option value="รอพิจารณา">รอพิจารณา</option>
-                        <option value="อนุมัติ">อนุมัติ</option>
-                        <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
-                    </select>
-                </div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ชื่อ-สกุล ผู้ขอ</th>
-                                <th>วันที่/เวลาออก</th>
-                                <th>เหตุผล</th>
-                                <th>สถานะ</th>
-                                <th>วันที่ยื่น</th>
-                                <th>การดำเนินการ</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                             <tr v-if="filteredAdminRequests.length === 0">
-                                <td colspan="6" class="no-data">ไม่พบข้อมูลคำขอ</td>
-                            </tr>
-                            <tr v-for="req in filteredAdminRequests" :key="req.id" :class="getStatusClass(req.status)">
-                                <td>{{ req.requesterName }}</td>
-                                <td>{{ formatDate(req.leaveDate) }} ({{ req.leaveTimeFrom }} - {{ req.leaveTimeTo }})</td>
-                                <td>{{ req.reason }}</td>
-                                <td>{{ req.status }}</td>
-                                <td>{{ formatDate(req.submissionDate, true) }}</td>
-                                <td>
-                                    <button v-if="req.status === 'รอพิจารณา'" @click="approveRequest(req.id)" class="btn btn-approve"><i class="fas fa-check"></i> อนุมัติ</button>
-                                    <button v-if="req.status === 'รอพิจารณา'" @click="rejectRequest(req.id)" class="btn btn-reject"><i class="fas fa-times"></i> ไม่อนุมัติ</button>
-                                    <button @click="deleteRequest(req.id)" class="btn btn-delete"><i class="fas fa-trash-alt"></i> ลบ</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-
-        <footer>
-            <p>พัฒนาโดย นายสุชาติ เวียงชัย © 2025 ระบบขออนุญาตออกนอกสถานศึกษาออนไลน์</p>
-        </footer>
+        <header><!-- ... Header content ... --></header>
+        <nav><!-- ... Nav content ... --></nav>
+        <main><!-- ... Main content views ... --></main>
+        <footer><!-- ... Footer content ... --></footer>
     </div>
 
     <script>
+        const APP_SCRIPT_URL = 'YOUR_NEW_DEPLOYED_APP_SCRIPT_URL_HERE'; // <--- ใส่ URL ที่ได้จากการ Deploy Apps Script ใหม่
+
         const app = new Vue({
             el: '#app',
             data: {
-                currentView: 'dashboardView', // Remains important for main content display
+                currentView: 'dashboardView',
                 requests: [],
-                newRequest: { // Still used for modal form data
-                    requesterName: '',
-                    leaveDate: '',
-                    leaveTimeFrom: '',
-                    leaveTimeTo: '',
-                    reason: '',
-                },
-                adminCredentials: { // Still used for modal form data
-                    username: '',
-                    password: ''
-                },
+                newRequest: { requesterName: '', leaveDate: '', leaveTimeFrom: '', leaveTimeTo: '', reason: '' },
+                adminCredentials: { username: '', password: '' },
                 isAdminLoggedIn: false,
                 searchTerm: '',
                 filterStatus: '',
@@ -326,138 +109,91 @@
                 filterStatusAdmin: 'รอพิจารณา',
                 pieChartInstance: null,
                 barChartInstance: null,
+                isLoading: false, // For general loading state
             },
-            computed: {
-                chartDataForStats() {
-                    const statusCounts = { 'รอพิจารณา': 0, 'อนุมัติ': 0, 'ไม่อนุมัติ': 0 };
-                    this.requests.forEach(req => { if (statusCounts.hasOwnProperty(req.status)) { statusCounts[req.status]++; } });
-                    return statusCounts;
-                },
-                filteredRequests() {
-                    let tempRequests = this.requests;
-                    if (this.searchTerm) {
-                        const term = this.searchTerm.toLowerCase();
-                        tempRequests = tempRequests.filter(req =>
-                            req.requesterName.toLowerCase().includes(term) ||
-                            req.reason.toLowerCase().includes(term) ||
-                            req.status.toLowerCase().includes(term)
-                        );
-                    }
-                    if (this.filterStatus) {
-                        tempRequests = tempRequests.filter(req => req.status === this.filterStatus);
-                    }
-                    return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
-                },
-                filteredAdminRequests() {
-                    let tempRequests = this.requests;
-                    if (this.searchTermAdmin) {
-                        const term = this.searchTermAdmin.toLowerCase();
-                        tempRequests = tempRequests.filter(req =>
-                            req.requesterName.toLowerCase().includes(term) ||
-                            req.reason.toLowerCase().includes(term)
-                        );
-                    }
-                    if (this.filterStatusAdmin) {
-                        tempRequests = tempRequests.filter(req => req.status === this.filterStatusAdmin);
-                    }
-                    return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
-                }
-            },
-            watch: {
-                requests: { handler() { this.conditionalUpdateCharts(); }, deep: true },
-                currentView(newView, oldView) {
-                    if (newView === 'dashboardView') {
-                        this.$nextTick(() => { this.updateCharts(); });
-                    } else if (oldView === 'dashboardView' && newView !== 'dashboardView') {
-                        this.destroyCharts();
-                    }
-                }
-            },
+            computed: { /* ... (เหมือนเดิม) ... */ },
+            watch: { /* ... (เหมือนเดิม) ... */ },
             methods: {
                 conditionalUpdateCharts() { if (this.currentView === 'dashboardView') { this.updateCharts(); } },
-                destroyCharts() {
-                    if (this.pieChartInstance) { this.pieChartInstance.destroy(); this.pieChartInstance = null; }
-                    if (this.barChartInstance) { this.barChartInstance.destroy(); this.barChartInstance = null; }
-                },
-                setView(view) {
-                    this.currentView = view;
-                    if (view === 'adminDashboard' && !this.isAdminLoggedIn) {
-                        this.currentView = 'dashboardView';
-                        this.openAdminLoginModal();
-                        // No need for extra Swal here, modal handles it
-                    }
-                    if (view === 'dashboardView') { this.searchTerm = ''; this.filterStatus = ''; }
-                },
-                loadRequests() {
-                    const storedRequests = localStorage.getItem('schoolLeaveRequests');
-                    if (storedRequests) { this.requests = JSON.parse(storedRequests); }
-                    if (sessionStorage.getItem('isAdminLoggedIn') === 'true') { this.isAdminLoggedIn = true; }
+                destroyCharts() { /* ... (เหมือนเดิม) ... */ },
+                setView(view) { /* ... (เหมือนเดิม) ... */ },
 
-                    if (this.currentView === 'dashboardView') {
-                        this.$nextTick(() => { this.updateCharts(); });
+                async loadRequests() {
+                    this.isLoading = true;
+                    Swal.fire({
+                        title: 'กำลังโหลดข้อมูล...',
+                        text: 'กรุณารอสักครู่',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+                    try {
+                        const response = await fetch(APP_SCRIPT_URL);
+                        if (!response.ok) {
+                            throw new Error(`Network response was not ok: ${response.statusText}`);
+                        }
+                        const data = await response.json();
+                        // Map data from sheet to match frontend structure if necessary
+                        // Apps Script doGet already returns keys like "ID", "ชื่อ-สกุล ผู้ขออนุญาต"
+                        // but frontend uses "requesterName", "leaveDate", etc.
+                        this.requests = data.map(item => ({
+                            id: item.ID, // Assuming Apps Script returns "ID"
+                            requesterName: item['ชื่อ-สกุล ผู้ขออนุญาต'],
+                            leaveDate: item['วันที่ต้องการออก'], // Ensure this is ISO string or parseable
+                            leaveTimeFrom: item['ตั้งแต่เวลา'],
+                            leaveTimeTo: item['ถึงเวลา'],
+                            reason: item['เหตุผล'],
+                            status: item['สถานะ'],
+                            submissionDate: item['วันที่ยื่น'] // Ensure this is ISO string or parseable
+                        }));
+
+                        Swal.close();
+                        if (this.currentView === 'dashboardView') {
+                            this.$nextTick(() => { this.updateCharts(); });
+                        }
+                    } catch (error) {
+                        console.error('Error loading requests:', error);
+                        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: 'ไม่สามารถโหลดข้อมูลได้: ' + error.message, confirmButtonColor: '#D32F2F' });
+                    } finally {
+                        this.isLoading = false;
                     }
                 },
-                saveRequests() { localStorage.setItem('schoolLeaveRequests', JSON.stringify(this.requests)); },
+
+                // REMOVED saveRequests() as we now save per action
+
                 generateId() { return '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36); },
-                formatDate(dateString, includeTime = false) {
-                    if (!dateString) return '-';
-                    const date = new Date(dateString);
-                    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-                     if (includeTime) { options.hour = '2-digit'; options.minute = '2-digit'; options.hour12 = false; }
-                    return date.toLocaleDateString('th-TH', options);
-                },
+                formatDate(dateString, includeTime = false) { /* ... (เหมือนเดิม) ... */ },
 
                 openRequestFormModal() {
                     this.newRequest = { requesterName: '', leaveDate: '', leaveTimeFrom: '', leaveTimeTo: '', reason: '' };
-                    Swal.fire({
+                    Swal.fire({ /* ... (Modal HTML and preConfirm - เหมือนเดิม) ... */
                         title: '<i class="fas fa-file-alt"></i> ยื่นคำขออนุญาต',
                         html: `
-                            <div>
-                                <label for="swal-requesterName" class="swal2-label">ชื่อ-สกุล ผู้ขออนุญาต:</label>
-                                <input id="swal-requesterName" class="swal2-input" placeholder="กรอกชื่อ-สกุล" value="${this.newRequest.requesterName}">
-                            </div>
-                            <div>
-                                <label for="swal-leaveDate" class="swal2-label">วันที่ต้องการออก:</label>
-                                <input id="swal-leaveDate" type="date" class="swal2-input" value="${this.newRequest.leaveDate}">
-                            </div>
-                            <div>
-                                <label for="swal-leaveTimeFrom" class="swal2-label">ตั้งแต่เวลา:</label>
-                                <input id="swal-leaveTimeFrom" type="time" class="swal2-input" value="${this.newRequest.leaveTimeFrom}">
-                            </div>
-                            <div>
-                                <label for="swal-leaveTimeTo" class="swal2-label">ถึงเวลา:</label>
-                                <input id="swal-leaveTimeTo" type="time" class="swal2-input" value="${this.newRequest.leaveTimeTo}">
-                            </div>
-                            <div>
-                                <label for="swal-reason" class="swal2-label">เหตุผล:</label>
-                                <textarea id="swal-reason" class="swal2-textarea" placeholder="ระบุเหตุผล" rows="3">${this.newRequest.reason}</textarea>
-                            </div>
+                            <div><label for="swal-requesterName" class="swal2-label">ชื่อ-สกุล ผู้ขออนุญาต:</label><input id="swal-requesterName" class="swal2-input" placeholder="กรอกชื่อ-สกุล"></div>
+                            <div><label for="swal-leaveDate" class="swal2-label">วันที่ต้องการออก:</label><input id="swal-leaveDate" type="date" class="swal2-input"></div>
+                            <div><label for="swal-leaveTimeFrom" class="swal2-label">ตั้งแต่เวลา:</label><input id="swal-leaveTimeFrom" type="time" class="swal2-input"></div>
+                            <div><label for="swal-leaveTimeTo" class="swal2-label">ถึงเวลา:</label><input id="swal-leaveTimeTo" type="time" class="swal2-input"></div>
+                            <div><label for="swal-reason" class="swal2-label">เหตุผล:</label><textarea id="swal-reason" class="swal2-textarea" placeholder="ระบุเหตุผล" rows="3"></textarea></div>
                         `,
-                        confirmButtonText: 'ยื่นคำขอ',
-                        focusConfirm: false,
-                        showCancelButton: true,
-                        cancelButtonText: 'ยกเลิก',
+                        confirmButtonText: 'ยื่นคำขอ', focusConfirm: false, showCancelButton: true, cancelButtonText: 'ยกเลิก',
                         preConfirm: () => {
-                            const requesterName = document.getElementById('swal-requesterName').value;
-                            const leaveDate = document.getElementById('swal-leaveDate').value;
-                            const leaveTimeFrom = document.getElementById('swal-leaveTimeFrom').value;
-                            const leaveTimeTo = document.getElementById('swal-leaveTimeTo').value;
-                            const reason = document.getElementById('swal-reason').value;
-
-                            if (!requesterName || !leaveDate || !leaveTimeFrom || !leaveTimeTo || !reason) {
-                                Swal.showValidationMessage(`กรุณากรอกข้อมูลให้ครบทุกช่อง`);
-                                return false;
+                            const data = {
+                                requesterName: document.getElementById('swal-requesterName').value,
+                                leaveDate: document.getElementById('swal-leaveDate').value,
+                                leaveTimeFrom: document.getElementById('swal-leaveTimeFrom').value,
+                                leaveTimeTo: document.getElementById('swal-leaveTimeTo').value,
+                                reason: document.getElementById('swal-reason').value,
+                            };
+                            if (!data.requesterName || !data.leaveDate || !data.leaveTimeFrom || !data.leaveTimeTo || !data.reason) {
+                                Swal.showValidationMessage(`กรุณากรอกข้อมูลให้ครบทุกช่อง`); return false;
                             }
-                            return { requesterName, leaveDate, leaveTimeFrom, leaveTimeTo, reason };
+                            return data;
                         }
                     }).then((result) => {
-                        if (result.isConfirmed) {
-                            this.submitRequest(result.value);
-                        }
+                        if (result.isConfirmed) { this.submitRequestToSheet(result.value); }
                     });
                 },
 
-                submitRequest(formData) {
+                async submitRequestToSheet(formData) {
                     const requestData = {
                         id: this.generateId(),
                         requesterName: formData.requesterName,
@@ -468,80 +204,57 @@
                         status: 'รอพิจารณา',
                         submissionDate: new Date().toISOString()
                     };
-                    this.requests.push(requestData);
-                    this.saveRequests();
-                    Swal.fire({ icon: 'success', title: 'ยื่นคำขอสำเร็จ!', text: 'คำขอของคุณถูกส่งเข้าระบบแล้ว โปรดรอการพิจารณา', confirmButtonColor: '#D32F2F'})
-                    .then(() => {
-                        if (this.currentView !== 'dashboardView') {
-                           this.setView('dashboardView');
-                        } else {
-                           this.conditionalUpdateCharts();
-                        }
-                    });
-                },
 
-                openAdminLoginModal() {
-                    this.adminCredentials = { username: '', password: '' };
-                    Swal.fire({
-                        title: '<i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบผู้บริหาร',
-                        html: `
-                            <div>
-                                <label for="swal-username" class="swal2-label">ชื่อผู้ใช้:</label>
-                                <input id="swal-username" class="swal2-input" placeholder="ชื่อผู้ใช้" value="${this.adminCredentials.username}">
-                            </div>
-                            <div>
-                                <label for="swal-password" class="swal2-label">รหัสผ่าน:</label>
-                                <input id="swal-password" type="password" class="swال2-input" placeholder="รหัสผ่าน" value="${this.adminCredentials.password}">
-                            </div>
-                        `,
-                        confirmButtonText: 'เข้าสู่ระบบ',
-                        focusConfirm: false,
-                        showCancelButton: true,
-                        cancelButtonText: 'ยกเลิก',
-                        preConfirm: () => {
-                            const username = document.getElementById('swal-username').value;
-                            const password = document.getElementById('swal-password').value;
-                            if (!username || !password) {
-                                Swal.showValidationMessage(`กรุณากรอกชื่อผู้ใช้และรหัสผ่าน`);
-                                return false;
-                            }
-                            return { username, password };
-                        }
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            this.loginAdmin(result.value);
-                        }
-                    });
-                },
+                    Swal.fire({ title: 'กำลังบันทึกข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-                loginAdmin(credentials) {
-                    if (credentials.username === 'mlpyboss' && credentials.password === '06052520') {
-                        this.isAdminLoggedIn = true; sessionStorage.setItem('isAdminLoggedIn', 'true');
-                        this.setView('adminDashboard');
-                         Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ', text: 'ยินดีต้อนรับผู้บริหาร', timer: 1500, showConfirmButton: false });
-                    } else {
-                        Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', confirmButtonColor: '#D32F2F' })
-                        .then(() => {
-                            this.openAdminLoginModal();
+                    try {
+                        const response = await fetch(APP_SCRIPT_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: 'create', data: requestData }),
+                            headers: { 'Content-Type': 'application/json' }
                         });
+                        const result = await response.json();
+                        if (result.success) {
+                            Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: 'คำขอของคุณถูกส่งเข้าระบบแล้ว', confirmButtonColor: '#D32F2F' });
+                            this.loadRequests(); // Reload data from sheet
+                        } else {
+                            throw new Error(result.message || 'ไม่สามารถบันทึกข้อมูลได้');
+                        }
+                    } catch (error) {
+                        console.error('Error submitting request:', error);
+                        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: 'ไม่สามารถบันทึกข้อมูล: ' + error.message, confirmButtonColor: '#D32F2F' });
                     }
                 },
-                logoutAdmin() {
-                     Swal.fire({ title: 'ยืนยันการออกจากระบบ?', text: "คุณต้องการออกจากระบบผู้บริหารใช่หรือไม่?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#D32F2F', cancelButtonColor: '#FFC107', confirmButtonText: 'ใช่, ออกจากระบบ', cancelButtonText: 'ยกเลิก'})
-                     .then((result) => {
-                        if (result.isConfirmed) {
-                            this.isAdminLoggedIn = false; sessionStorage.removeItem('isAdminLoggedIn');
-                            this.setView('dashboardView');
-                            Swal.fire({ icon: 'info', title: 'ออกจากระบบแล้ว', timer: 1500, showConfirmButton: false });
+
+                openAdminLoginModal() { /* ... (เหมือนเดิม) ... */ },
+                loginAdmin(credentials) { /* ... (เหมือนเดิม) ... */ },
+                logoutAdmin() { /* ... (เหมือนเดิม) ... */ },
+
+                async updateRequestStatusInSheet(id, newStatus, successMessage, actionVerb) {
+                    Swal.fire({ title: `กำลัง${actionVerb}...`, text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                    try {
+                        const response = await fetch(APP_SCRIPT_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: 'updateStatus', id: id, status: newStatus }),
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            Swal.fire({icon: 'success', title: successMessage, confirmButtonColor: '#D32F2F'});
+                            this.loadRequests(); // Reload data
+                        } else {
+                            throw new Error(result.message || `ไม่สามารถ${actionVerb}ได้`);
                         }
-                    });
+                    } catch (error) {
+                        console.error(`Error ${actionVerb} request:`, error);
+                        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: `ไม่สามารถ${actionVerb}สถานะ: ` + error.message, confirmButtonColor: '#D32F2F' });
+                    }
                 },
                 approveRequest(id) {
                     Swal.fire({ title: 'ยืนยันการอนุมัติ?', text: "คุณต้องการอนุมัติคำขอนี้ใช่หรือไม่?", icon: 'question', showCancelButton: true, confirmButtonColor: '#4CAF50', cancelButtonColor: '#757575', confirmButtonText: 'อนุมัติ', cancelButtonText: 'ยกเลิก'})
                     .then((result) => {
                         if (result.isConfirmed) {
-                            const request = this.requests.find(req => req.id === id);
-                            if (request) { request.status = 'อนุมัติ'; this.saveRequests(); Swal.fire('อนุมัติแล้ว!', 'คำขอได้รับการอนุมัติเรียบร้อย', 'success'); }
+                            this.updateRequestStatusInSheet(id, 'อนุมัติ', 'อนุมัติแล้ว!', 'อนุมัติ');
                         }
                     });
                 },
@@ -549,70 +262,50 @@
                      Swal.fire({ title: 'ยืนยันการไม่อนุมัติ?', text: "คุณต้องการไม่อนุมัติคำขอนี้ใช่หรือไม่?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#f44336', cancelButtonColor: '#757575', confirmButtonText: 'ไม่อนุมัติ', cancelButtonText: 'ยกเลิก'})
                      .then((result) => {
                         if (result.isConfirmed) {
-                            const request = this.requests.find(req => req.id === id);
-                            if (request) { request.status = 'ไม่อนุมัติ'; this.saveRequests(); Swal.fire('ไม่อนุมัติแล้ว!', 'คำขอไม่ได้รับการอนุมัติ', 'info');}
+                            this.updateRequestStatusInSheet(id, 'ไม่อนุมัติ', 'ไม่อนุมัติแล้ว!', 'ไม่อนุมัติ');
                         }
                     });
+                },
+                async deleteRequestFromSheet(id) {
+                    Swal.fire({ title: 'กำลังลบข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                    try {
+                        const response = await fetch(APP_SCRIPT_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: 'delete', id: id }),
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            Swal.fire({icon: 'success', title: 'ลบสำเร็จ!', text: 'คำขอถูกลบออกจากระบบแล้ว', confirmButtonColor: '#D32F2F'});
+                            this.loadRequests(); // Reload data
+                        } else {
+                            throw new Error(result.message || 'ไม่สามารถลบข้อมูลได้');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting request:', error);
+                        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: 'ไม่สามารถลบข้อมูล: ' + error.message, confirmButtonColor: '#D32F2F' });
+                    }
                 },
                 deleteRequest(id) {
                     Swal.fire({ title: 'ยืนยันการลบ?', text: "คุณต้องการลบคำขอนี้ออกจากระบบใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้", icon: 'error', showCancelButton: true, confirmButtonColor: '#D32F2F', cancelButtonColor: '#757575', confirmButtonText: 'ใช่, ลบเลย!', cancelButtonText: 'ยกเลิก'})
                     .then((result) => {
                         if (result.isConfirmed) {
-                            this.requests = this.requests.filter(req => req.id !== id); this.saveRequests(); Swal.fire('ลบสำเร็จ!', 'คำขอถูกลบออกจากระบบแล้ว', 'success');
+                            this.deleteRequestFromSheet(id);
                         }
                     });
                 },
-                getStatusClass(status) {
-                    if (status === 'รอพิจารณา') return 'status-pending'; if (status === 'อนุมัติ') return 'status-approved'; if (status === 'ไม่อนุมัติ') return 'status-rejected'; return '';
-                },
-                updateCharts() {
-                    this.$nextTick(() => {
-                        this.createPieChart();
-                        this.createBarChart();
-                    });
-                },
-                createPieChart() {
-                    if (this.pieChartInstance) { this.pieChartInstance.destroy(); }
-                    const ctx = document.getElementById('statusPieChart');
-                    if (!ctx || !ctx.getContext('2d')) return;
-                    const stats = this.chartDataForStats;
-                    if (Object.values(stats).every(v => v === 0) && !this.requests.length) {
-                        const context = ctx.getContext('2d');
-                        context.clearRect(0, 0, ctx.width, ctx.height);
-                         context.font = "16px Prompt"; context.fillStyle = "#888"; context.textAlign = "center";
-                        context.fillText("ไม่มีข้อมูลสำหรับแสดงผล", ctx.width / 2, ctx.height / 2);
-                        return;
-                    }
-                    const data = { labels: Object.keys(stats), datasets: [{ label: 'สถานะคำขอ', data: Object.values(stats), backgroundColor: ['#FFC107', '#4CAF50', '#D32F2F'], hoverOffset: 4 }] };
-                    this.pieChartInstance = new Chart(ctx, { type: 'pie', data: data, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: {font: { family: 'Prompt'}}} } } });
-                },
-                createBarChart() {
-                    if (this.barChartInstance) { this.barChartInstance.destroy(); }
-                    const ctx = document.getElementById('statusCountBarChart');
-                     if (!ctx || !ctx.getContext('2d')) return;
-                    const stats = this.chartDataForStats;
-                     if (Object.values(stats).every(v => v === 0) && !this.requests.length) {
-                        const context = ctx.getContext('2d');
-                        context.clearRect(0, 0, ctx.width, ctx.height);
-                        context.font = "16px Prompt"; context.fillStyle = "#888"; context.textAlign = "center";
-                        context.fillText("ไม่มีข้อมูลสำหรับแสดงผล", ctx.width / 2, ctx.height / 2);
-                        return;
-                    }
-                    const data = { labels: Object.keys(stats), datasets: [{ label: 'จำนวนคำขอ', data: Object.values(stats), backgroundColor: ['rgba(255, 193, 7, 0.7)', 'rgba(76, 175, 80, 0.7)', 'rgba(211, 47, 47, 0.7)'], borderColor: ['#FFC107', '#4CAF50', '#D32F2F'], borderWidth: 1 }] };
-                    this.barChartInstance = new Chart(ctx, { type: 'bar', data: data, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Prompt' } } }, x: { ticks: { font: { family: 'Prompt' }} } }, plugins: { legend: { display: false }, tooltip: { titleFont: { family: 'Prompt'}, bodyFont: { family: 'Prompt'}}} } });
-                }
+
+                getStatusClass(status) { /* ... (เหมือนเดิม) ... */ },
+                updateCharts() { /* ... (เหมือนเดิม) ... */ },
+                createPieChart() { /* ... (เหมือนเดิม) ... */ },
+                createBarChart() { /* ... (เหมือนเดิม) ... */ }
             },
             mounted() {
-                this.loadRequests();
+                this.loadRequests(); // Load initial data from Google Sheet
                 if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                     this.isAdminLoggedIn = true;
                 } else {
-                     this.currentView = 'dashboardView'; // Default to dashboard if not logged in
-                }
-
-                // Ensure charts are loaded if the initial view is dashboardView
-                if (this.currentView === 'dashboardView') {
-                    this.$nextTick(() => this.updateCharts());
+                     this.currentView = 'dashboardView';
                 }
             }
         });
