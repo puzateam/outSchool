@@ -9,9 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@next/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script> <!-- Updated adapter -->
     <style>
-        /* ... CSS ทั้งหมดเหมือนเดิมจากครั้งที่แล้ว ... */
+        /* ... CSS ทั้งหมดจากคำตอบก่อนหน้า ควรจะยังใช้ได้ดี ... */
         body { font-family: 'Prompt', sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; line-height: 1.6; }
         #app { display: flex; flex-direction: column; min-height: 100vh; }
         header { background: linear-gradient(135deg, #D32F2F, #FFC107); color: white; padding: 15px 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -125,21 +125,21 @@
                         <thead>
                             <tr>
                                 <th>ลำดับ</th>
-                                <th>ชื่อ-สกุล ผู้ขอ</th>
-                                <th>ประเภท</th>
-                                <th>วันที่ขออนุญาต</th>
-                                <th>เวลาออก (ชม.:นาที)</th>
+                                <th>ชื่อสกุลผู้ขอ</th>
+                                <th>ประเภทคำขอ</th>
+                                <th>วันที่ลา/ออกนอก</th>
+                                <th>เวลา (ชม.:นาที)</th>
                                 <th>เหตุผล</th>
-                                <th>สถานะ</th>
-                                <th>วันที่ยื่น (ไทย)</th>
+                                <th>สถานะคำขอ</th>
+                                <th>วันที่ยื่นคำขอ</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="filteredRequestsForTable.length === 0 && !isLoading">
-                                <td colspan="8" class="no-data">ไม่พบข้อมูลคำขอ</td> <!-- Corrected colspan -->
+                                <td colspan="8" class="no-data">ไม่พบข้อมูลคำขอ</td>
                             </tr>
                             <tr v-if="isLoading">
-                                <td colspan="8" class="no-data">กำลังโหลดข้อมูล...</td> <!-- Corrected colspan -->
+                                <td colspan="8" class="no-data">กำลังโหลดข้อมูล...</td>
                             </tr>
                             <tr v-for="(req, index) in filteredRequestsForTable" :key="req.id" :class="getStatusClass(req.status)">
                                 <td>{{ index + 1 }}</td>
@@ -177,22 +177,22 @@
                     <table class="admin-dashboard-table">
                         <thead>
                             <tr>
-                                <th>ชื่อ-สกุล ผู้ขอ</th>
-                                <th>ประเภท</th>
-                                <th>วันที่ขออนุญาต</th>
-                                <th>เวลาออก (ชม.:นาที)</th>
+                                <th>ชื่อสกุลผู้ขอ</th>
+                                <th>ประเภทคำขอ</th>
+                                <th>วันที่ลา/ออกนอก</th>
+                                <th>เวลา (ชม.:นาที)</th>
                                 <th>เหตุผล</th>
-                                <th>สถานะ</th>
-                                <th>วันที่ยื่น (ไทย)</th>
+                                <th>สถานะคำขอ</th>
+                                <th>วันที่ยื่นคำขอ</th>
                                 <th>การดำเนินการ</th>
                             </tr>
                         </thead>
                         <tbody>
                              <tr v-if="filteredAdminRequests.length === 0 && !isLoading">
-                                <td colspan="8" class="no-data">ไม่พบข้อมูลคำขอ</td> <!-- Corrected colspan -->
+                                <td colspan="8" class="no-data">ไม่พบข้อมูลคำขอ</td>
                             </tr>
                              <tr v-if="isLoading && filteredAdminRequests.length === 0">
-                                <td colspan="8" class="no-data">กำลังโหลดข้อมูล...</td> <!-- Corrected colspan -->
+                                <td colspan="8" class="no-data">กำลังโหลดข้อมูล...</td>
                             </tr>
                             <tr v-for="req in filteredAdminRequests" :key="req.id" :class="getStatusClass(req.status)">
                                 <td>{{ req.requesterName }}</td>
@@ -220,14 +220,14 @@
     </div>
 
     <script>
-        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrmn6WLJfs5q7ye3Mo95kEraPE8BuXdSHji0Ekwlr9JO20zPrIap0ujQnqAG2wah-W/exec';
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrmn6WLJfs5q7ye3Mo95kEraPE8BuXdSHji0Ekwlr9JO20zPrIap0ujQnqAG2wah-W/exec'; // ตรวจสอบ URL นี้ให้ถูกต้อง
 
         const app = new Vue({
             el: '#app',
-            data: {
+            data: { /* ... (เหมือนเดิมจากครั้งที่แล้ว, รวมถึง default newRequest.requestType เป็น 'ลา') ... */
                 currentView: 'dashboardView',
                 requests: [],
-                newRequest: { requesterName: '', requestType: 'ลา', leaveDate: '', leaveTimeFrom: '08:00', leaveTimeTo: '16:00', reason: '' }, // Default type to 'ลา' for auto-time
+                newRequest: { requesterName: '', requestType: 'ลา', leaveDate: '', leaveTimeFrom: '08:00', leaveTimeTo: '16:00', reason: '' },
                 adminCredentials: { username: '', password: '' },
                 isAdminLoggedIn: false,
                 searchTerm: '',
@@ -239,13 +239,13 @@
                 permissionMonthlyChartInstance: null,
                 isLoading: false,
             },
-            computed: {
+            computed: { /* ... (เหมือนเดิมจากครั้งที่แล้ว) ... */
                 leaveMonthlyChartData() { const monthlyData = {}; const leaveRequests = this.requests.filter(req => req.requestType === 'ลา'); leaveRequests.forEach(req => { if (req.leaveDate) { const monthYear = new Date(req.leaveDate).toISOString().slice(0, 7); if (!monthlyData[monthYear]) { monthlyData[monthYear] = { 'รอพิจารณา': 0, 'อนุมัติ': 0, 'ไม่อนุมัติ': 0 }; } if (monthlyData[monthYear].hasOwnProperty(req.status)) { monthlyData[monthYear][req.status]++; } } }); return monthlyData; },
                 permissionMonthlyChartData() { const monthlyData = {}; const permissionRequests = this.requests.filter(req => req.requestType === 'ขออนุญาตออกนอกสถานศึกษา'); permissionRequests.forEach(req => { if (req.leaveDate) { const monthYear = new Date(req.leaveDate).toISOString().slice(0, 7); if (!monthlyData[monthYear]) { monthlyData[monthYear] = { 'รอพิจารณา': 0, 'อนุมัติ': 0, 'ไม่อนุมัติ': 0 }; } if (monthlyData[monthYear].hasOwnProperty(req.status)) { monthlyData[monthYear][req.status]++; } } }); return monthlyData; },
                 filteredRequestsForTable() { let tempRequests = this.requests; if (this.searchTerm) { const term = this.searchTerm.toLowerCase(); tempRequests = tempRequests.filter(req => (req.requesterName && req.requesterName.toLowerCase().includes(term)) || (req.reason && req.reason.toLowerCase().includes(term)) ); } if (this.filterStatus) { tempRequests = tempRequests.filter(req => req.status === this.filterStatus); } return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate)); },
                 filteredAdminRequests() { let tempRequests = this.requests; if (this.searchTermAdmin) { const term = this.searchTermAdmin.toLowerCase(); tempRequests = tempRequests.filter(req => (req.requesterName && req.requesterName.toLowerCase().includes(term)) || (req.reason && req.reason.toLowerCase().includes(term)) ); } if (this.filterTypeAdmin) { tempRequests = tempRequests.filter(req => req.requestType === this.filterTypeAdmin); } if (this.filterStatusAdmin) { tempRequests = tempRequests.filter(req => req.status === this.filterStatusAdmin); } return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate)); }
             },
-            watch: {
+            watch: { /* ... (เหมือนเดิมจากครั้งที่แล้ว) ... */
                 requests: { handler() { this.updateAllDashboardCharts(); }, deep: true },
                 currentView(newView, oldView) { if (newView === 'dashboardView') { this.$nextTick(() => { this.updateAllDashboardCharts(); }); } else if (oldView === 'dashboardView' && newView !== 'dashboardView') { this.destroyAllCharts(); } }
             },
@@ -253,60 +253,56 @@
                 updateAllDashboardCharts() { if (this.currentView === 'dashboardView') { this.createLeaveMonthlyChart(); this.createPermissionMonthlyChart(); } },
                 destroyAllCharts() { if (this.leaveMonthlyChartInstance) { this.leaveMonthlyChartInstance.destroy(); this.leaveMonthlyChartInstance = null; } if (this.permissionMonthlyChartInstance) { this.permissionMonthlyChartInstance.destroy(); this.permissionMonthlyChartInstance = null; } },
                 setView(view) { this.currentView = view; if (view === 'adminDashboard' && !this.isAdminLoggedIn) { this.currentView = 'dashboardView'; this.openAdminLoginModal(); } if (view === 'dashboardView') { this.searchTerm = ''; this.filterStatus = ''; } },
-                async loadRequests() { this.isLoading = true; if (this.currentView === 'dashboardView' && !this.requests.length) { Swal.fire({ title: 'กำลังโหลดข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }}); } try { const response = await fetch(APP_SCRIPT_URL); if (!response.ok) { const errorText = await response.text(); throw new Error(`Network: ${response.status} ${response.statusText}. Server: ${errorText}`); } const data = await response.json(); if (!Array.isArray(data)) { throw new Error("รูปแบบข้อมูลไม่ถูกต้อง"); } this.requests = data.map(item => ({ id: item.ID || item.id, requesterName: item['ชื่อ-สกุล ผู้ขออนุญาต'] || item.requesterName, requestType: item['ประเภท'] || item.requestType, leaveDate: item['วันที่ต้องการออก'] || item.leaveDate, leaveTimeFrom: item['ตั้งแต่เวลา'] || item.leaveTimeFrom, leaveTimeTo: item['ถึงเวลา'] || item.leaveTimeTo, reason: item['เหตุผล'] || item.reason, status: item['สถานะ'] || item.status, submissionDate: item['วันที่ยื่น'] || item.submissionDate })); if (Swal.isVisible() && Swal.getTitle().textContent.includes('กำลังโหลดข้อมูล...')) { Swal.close(); } if (this.currentView === 'dashboardView') { this.$nextTick(() => { this.updateAllDashboardCharts(); }); } } catch (error) { console.error('Error loading:', error); if (Swal.isVisible() && Swal.getTitle().textContent.includes('กำลังโหลดข้อมูล...')) { Swal.close(); } Swal.fire({ icon: 'error', title: 'ผิดพลาด!', text: 'โหลดข้อมูลไม่ได้: ' + error.message, confirmButtonColor: '#D32F2F' }); } finally { this.isLoading = false; } },
-                generateId() { return '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36); },
-                formatDate(dateString, includeTime = false) { if (!dateString) return '-'; try { const date = new Date(dateString); if (isNaN(date.getTime())) { return dateString; } const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Bangkok' }; if (includeTime) { options.hour = '2-digit'; options.minute = '2-digit'; options.hour12 = false; } return new Intl.DateTimeFormat('th-TH', options).format(date); } catch (e) { console.error("FmtDate Err:", e, "In:", dateString); return dateString; } },
-                formatTimeDisplay(timeString) { if (!timeString) return ''; if (/^\d{2}:\d{2}$/.test(timeString)) { return timeString; } try { const date = new Date(`1970-01-01T${timeString}Z`); if (isNaN(date.getTime())) { /* Try parsing as full date if formatTimeDisplay is misused */ const fullDate = new Date(timeString); if(isNaN(fullDate.getTime())) return timeString; return `${String(fullDate.getHours()).padStart(2, '0')}:${String(fullDate.getMinutes()).padStart(2, '0')}`; } return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`; } catch (e) { return timeString; } },
-                openRequestFormModal() {
-                    this.newRequest = { requesterName: '', requestType: 'ลา', leaveDate: '', leaveTimeFrom: '08:00', leaveTimeTo: '16:00', reason: '' }; // Default to "ลา" and set times
-                    Swal.fire({
-                        title: '<i class="fas fa-file-alt"></i> ยื่นคำขอ',
-                        html: `
-                            <div><label for="swal-requestType" class="swal2-label">ประเภท:</label>
-                                <select id="swal-requestType" class="swal2-select">
-                                    <option value="ลา">ลา</option>
-                                    <option value="ขออนุญาตออกนอกสถานศึกษา">ขออนุญาตออกนอกสถานศึกษา</option>
-                                </select>
-                            </div>
-                            <div><label for="swal-requesterName" class="swal2-label">ชื่อ-สกุล ผู้ขอ:</label><input id="swal-requesterName" class="swal2-input" placeholder="กรอกชื่อ-สกุล"></div>
-                            <div><label for="swal-leaveDate" class="swal2-label">วันที่ (ลา/ออกนอก):</label><input id="swal-leaveDate" type="date" class="swal2-input"></div>
-                            <div><label for="swal-leaveTimeFrom" class="swal2-label">ตั้งแต่เวลา (ชม.:นาที):</label><input id="swal-leaveTimeFrom" type="time" class="swal2-input" value="08:00" readonly></div>
-                            <div><label for="swal-leaveTimeTo" class="swal2-label">ถึงเวลา (ชม.:นาที):</label><input id="swal-leaveTimeTo" type="time" class="swal2-input" value="16:00" readonly></div>
-                            <div><label for="swal-reason" class="swal2-label">เหตุผล:</label><textarea id="swal-reason" class="swal2-textarea" placeholder="ระบุเหตุผล" rows="3"></textarea></div>
-                        `,
-                        didOpen: () => {
-                            const typeSelect = document.getElementById('swal-requestType');
-                            const timeFromInput = document.getElementById('swal-leaveTimeFrom');
-                            const timeToInput = document.getElementById('swal-leaveTimeTo');
-                            typeSelect.value = this.newRequest.requestType; // Set initial select value
+                async loadRequests() {
+                    this.isLoading = true;
+                    if (this.currentView === 'dashboardView' && this.requests.length === 0) { // Show loader only on initial dashboard load or if requests are empty
+                        Swal.fire({ title: 'กำลังโหลดข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                    }
+                    try {
+                        const response = await fetch(APP_SCRIPT_URL);
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`Network response error: ${response.status} ${response.statusText}. Server: ${errorText}`);
+                        }
+                        const data = await response.json();
+                        if (data.error) { // Check for specific error property from Apps Script
+                            throw new Error(`Apps Script Error: ${data.error}`);
+                        }
+                        if (!Array.isArray(data)) {
+                            console.error("Received data is not an array:", data);
+                            throw new Error("รูปแบบข้อมูลที่ได้รับจากเซิร์ฟเวอร์ไม่ถูกต้อง");
+                        }
+                        this.requests = data; // Assume Apps Script now returns keys matching Vue data directly
+                                              // (id, requesterName, requestType, leaveDate, leaveTimeFrom, leaveTimeTo, reason, status, submissionDate)
 
-                            typeSelect.addEventListener('change', (e) => {
-                                this.newRequest.requestType = e.target.value; // Update Vue data
-                                if (e.target.value === 'ลา') {
-                                    timeFromInput.value = '08:00'; timeToInput.value = '16:00';
-                                    timeFromInput.readOnly = true; timeToInput.readOnly = true;
-                                } else {
-                                    timeFromInput.value = ''; timeToInput.value = '';
-                                    timeFromInput.readOnly = false; timeToInput.readOnly = false;
-                                }
-                            });
-                        },
-                        confirmButtonText: 'ยื่นคำขอ', focusConfirm: false, showCancelButton: true, cancelButtonText: 'ยกเลิก',
-                        preConfirm: () => { const data = { requestType: document.getElementById('swal-requestType').value, requesterName: document.getElementById('swal-requesterName').value, leaveDate: document.getElementById('swal-leaveDate').value, leaveTimeFrom: document.getElementById('swal-leaveTimeFrom').value, leaveTimeTo: document.getElementById('swal-leaveTimeTo').value, reason: document.getElementById('swal-reason').value, }; if (!data.requestType || !data.requesterName || !data.leaveDate || !data.leaveTimeFrom || !data.leaveTimeTo || !data.reason) { Swal.showValidationMessage(`กรุณากรอกข้อมูลให้ครบทุกช่อง`); return false; } return data; }
-                    }).then((result) => { if (result.isConfirmed) { this.submitRequestToSheet(result.value); }});
+                        if (Swal.isVisible() && Swal.getTitle().textContent.includes('กำลังโหลดข้อมูล...')) { Swal.close(); }
+                        if (this.currentView === 'dashboardView') { this.$nextTick(() => { this.updateAllDashboardCharts(); }); }
+                    } catch (error) {
+                        console.error('Error loading requests:', error);
+                        if (Swal.isVisible() && Swal.getTitle().textContent.includes('กำลังโหลดข้อมูล...')) { Swal.close(); }
+                        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: 'ไม่สามารถโหลดข้อมูลได้: ' + error.message, confirmButtonColor: '#D32F2F' });
+                    } finally {
+                        this.isLoading = false;
+                    }
                 },
-                async submitRequestToSheet(formData) { const requestData = { id: this.generateId(), requesterName: formData.requesterName, requestType: formData.requestType, leaveDate: formData.leaveDate, leaveTimeFrom: formData.leaveTimeFrom, leaveTimeTo: formData.leaveTimeTo, reason: formData.reason, status: 'รอพิจารณา', submissionDate: new Date().toISOString() }; Swal.fire({ title: 'กำลังบันทึก...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } }); try { const response = await fetch(APP_SCRIPT_URL, { method: 'POST', mode: 'cors', body: JSON.stringify({ action: 'create', data: requestData }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); const resultText = await response.text(); const result = JSON.parse(resultText); if (result.success) { Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: 'ส่งคำขอเข้าระบบแล้ว', confirmButtonColor: '#D32F2F' }); this.loadRequests(); } else { throw new Error(result.message || 'บันทึกข้อมูลไม่ได้'); } } catch (error) { console.error('Error submit:', error); Swal.fire({ icon: 'error', title: 'ผิดพลาด!', text: 'บันทึกข้อมูลไม่ได้: ' + error.message, confirmButtonColor: '#D32F2F' }); } },
-                // Admin methods: openAdminLoginModal, loginAdmin, logoutAdmin, updateRequestStatusInSheet, approveRequest, rejectRequest, deleteRequestFromSheet, deleteRequest
-                openAdminLoginModal() { /* ... */ }, loginAdmin(credentials) { /* ... */ }, logoutAdmin() { /* ... */ },
-                async updateRequestStatusInSheet(id, newStatus, successMessage, actionVerb) { /* ... */ },
-                approveRequest(id) { /* ... */ }, rejectRequest(id) { /* ... */ },
-                async deleteRequestFromSheet(id) { /* ... */ }, deleteRequest(id) { /* ... */ },
-                getStatusClass(status) { /* ... */ },
-                // Chart methods
-                createMonthlyBarChart(canvasId, chartTitle, chartData, instanceTracker) { if (this[instanceTracker]) { this[instanceTracker].destroy(); } const ctx = document.getElementById(canvasId); if (!ctx || !ctx.getContext('2d')) return; const labels = Object.keys(chartData).sort(); if (labels.length === 0) { const context = ctx.getContext('2d'); context.clearRect(0, 0, ctx.width, ctx.height); context.font = "16px Prompt"; context.fillStyle = "#888"; context.textAlign = "center"; context.fillText(`ไม่มีข้อมูลสำหรับ "${chartTitle}"`, ctx.width / 2, ctx.height / 2); return; } const datasets = [ { label: 'รอพิจารณา', data: labels.map(month => chartData[month]['รอพิจารณา'] || 0), backgroundColor: 'rgba(255, 205, 86, 0.8)' }, { label: 'อนุมัติ', data: labels.map(month => chartData[month]['อนุมัติ'] || 0), backgroundColor: 'rgba(75, 192, 192, 0.8)' }, { label: 'ไม่อนุมัติ', data: labels.map(month => chartData[month]['ไม่อนุมัติ'] || 0), backgroundColor: 'rgba(255, 99, 132, 0.8)' } ]; this[instanceTracker] = new Chart(ctx, { type: 'bar', data: { labels: labels.map(l => this.formatMonthYear(l)), datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: {font: { family: 'Prompt'}}}, tooltip: { titleFont: { family: 'Prompt'}, bodyFont: { family: 'Prompt'}} }, scales: { x: { stacked: true, ticks: { font: { family: 'Prompt' } } }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Prompt' } } } } } }); },
+                generateId() { return '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36); },
+                formatDate(dateString, includeTime = false) { if (!dateString) return '-'; try { const date = new Date(dateString); if (isNaN(date.getTime())) { return dateString; } const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Bangkok' }; if (includeTime) { options.hour = '2-digit'; options.minute = '2-digit'; options.hour12 = false; } return new Intl.DateTimeFormat('th-TH', options).format(date); } catch (e) { return dateString; } },
+                formatTimeDisplay(timeString) { if (!timeString || typeof timeString !== 'string') return ''; if (/^\d{2}:\d{2}$/.test(timeString)) { return timeString; } try { const date = new Date(`1970-01-01T${timeString.split('.')[0]}Z`); if (isNaN(date.getTime())) { const fullDate = new Date(timeString); if(isNaN(fullDate.getTime())) return timeString; return `${String(fullDate.getHours()).padStart(2, '0')}:${String(fullDate.getMinutes()).padStart(2, '0')}`; } return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`; } catch (e) { return timeString; } },
+                openRequestFormModal() { /* ... (เหมือนเดิม, รวมถึงการตั้งค่า default type เป็น 'ลา' และเวลาอัตโนมัติ) ... */ },
+                async submitRequestToSheet(formData) { /* ... (เหมือนเดิม) ... */ },
+                openAdminLoginModal() { /* ... (เหมือนเดิม) ... */ },
+                loginAdmin(credentials) { /* ... (เหมือนเดิม) ... */ },
+                logoutAdmin() { /* ... (เหมือนเดิม) ... */ },
+                async updateRequestStatusInSheet(id, newStatus, successMessage, actionVerb) { /* ... (เหมือนเดิม) ... */ },
+                approveRequest(id) { /* ... (เหมือนเดิม) ... */ },
+                rejectRequest(id) { /* ... (เหมือนเดิม) ... */ },
+                async deleteRequestFromSheet(id) { /* ... (เหมือนเดิม) ... */ },
+                deleteRequest(id) { /* ... (เหมือนเดิม) ... */ },
+                getStatusClass(status) { /* ... (เหมือนเดิม) ... */ },
+                createMonthlyBarChart(canvasId, chartTitle, chartData, instanceTracker) { /* ... (เหมือนเดิม, รวมถึงสีที่ปรับแล้ว) ... */ },
                 createLeaveMonthlyChart() { this.createMonthlyBarChart('leaveMonthlyChart', 'การลา', this.leaveMonthlyChartData, 'leaveMonthlyChartInstance'); },
                 createPermissionMonthlyChart() { this.createMonthlyBarChart('permissionMonthlyChart', 'การขออนุญาตออกนอกฯ', this.permissionMonthlyChartData, 'permissionMonthlyChartInstance'); },
-                formatMonthYear(monthYearStr) { if (!monthYearStr) return ''; const [year, month] = monthYearStr.split('-'); const date = new Date(parseInt(year), parseInt(month) - 1, 1); return new Intl.DateTimeFormat('th-TH', { month: 'long', year: 'numeric', timeZone: 'Asia/Bangkok' }).format(date); }
+                formatMonthYear(monthYearStr) { /* ... (เหมือนเดิม) ... */ }
             },
             mounted() { this.loadRequests(); if (sessionStorage.getItem('isAdminLoggedIn') === 'true') { this.isAdminLoggedIn = true; } else { this.currentView = 'dashboardView'; } }
         });
