@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <style>
-        /* ... CSS ทั้งหมดเหมือนเดิม ... */
+        /* Global Styles */
         body { font-family: 'Prompt', sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; line-height: 1.6; }
         #app { display: flex; flex-direction: column; min-height: 100vh; }
         header { background: linear-gradient(135deg, #D32F2F, #FFC107); color: white; padding: 15px 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -48,13 +48,45 @@
         .btn-approve { background-color: #4CAF50; color: white; } .btn-approve:hover { background-color: #388E3C; }
         .btn-reject { background-color: #f44336; color: white; } .btn-reject:hover { background-color: #c62828; }
         .btn-delete { background-color: #757575; color: white; } .btn-delete:hover { background-color: #525252; }
+
+        /* Table Styles */
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: middle; }
-        th { background-color: #f0f0f0; font-weight: 500; color: #D32F2F; }
-        tr:nth-child(even) { background-color: #f9f9f9; } tr:hover { background-color: #f1f1f1; }
-        .status-pending { background-color: #fff9c4; } .status-approved { background-color: #c8e6c9; } .status-rejected { background-color: #ffcdd2; }
+        th, td { border: 1px solid #ddd; padding: 8px 10px; /* Reduced padding slightly */ vertical-align: middle; }
+        th {
+            background-color: #f0f0f0;
+            font-weight: 500;
+            color: #D32F2F;
+            text-align: center; /* Center align table headers */
+        }
+        td {
+             text-align: left; /* Default left align for data cells */
+        }
+        td.cell-center { /* Optional class to center specific td content */
+            text-align: center;
+        }
+        /* Specifically center the "ลำดับ" and "สถานะ" columns by default */
+        td:first-child, /* ลำดับ */
+        td:nth-last-child(2):not(:nth-last-child(1)) /* สถานะ on dashboard view */
+        {
+            text-align: center;
+        }
+        /* สถานะ on admin view (before last 'การดำเนินการ' column) */
+        table thead th:nth-last-child(3) + th + th ~ td:nth-last-child(3),
+        /* If only 6 columns (no actions), then status is 2nd to last */
+        table thead th:nth-last-child(2):not(:nth-last-child(3)) + th ~ td:nth-last-child(2)
+        {
+             /* This rule is complex due to varying column counts. Simpler to add a class or rely on the above. */
+        }
+
+
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+        .status-pending { background-color: #fff9c4; }
+        .status-approved { background-color: #c8e6c9; }
+        .status-rejected { background-color: #ffcdd2; }
         .no-data { text-align: center; font-style: italic; color: #777; padding: 20px; }
+
         .filter-search-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .search-input, .filter-select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: 'Prompt', sans-serif; }
         .search-input { flex-grow: 1; } .filter-select { min-width: 180px; }
@@ -90,7 +122,18 @@
             <div v-if="currentView === 'dashboardView'" class="view-container">
                 <h2><i class="fas fa-tachometer-alt"></i> แดชบอร์ด - ภาพรวมคำขออนุญาต</h2>
                 <div class="charts-container">
-                    <!-- ... Chart content ... -->
+                    <div class="chart-wrapper">
+                        <h3>สถิติสถานะคำขอ (ภาพรวม)</h3>
+                        <div class="chart-canvas-container">
+                           <canvas id="statusPieChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>จำนวนคำขอตามสถานะ</h3>
+                         <div class="chart-canvas-container">
+                            <canvas id="statusCountBarChart"></canvas>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="filter-search-container">
@@ -108,28 +151,28 @@
                             <tr>
                                 <th>ลำดับ</th>
                                 <th>ชื่อ-สกุล ผู้ขอ</th>
-                                <th>วันที่ออก</th> <!-- Changed -->
-                                <th>เวลาออก</th>   <!-- New -->
+                                <th>วันที่ขออนุญาต</th> <!-- Changed -->
+                                <th>เวลาออก (ชม.:นาที)</th>   <!-- Changed -->
                                 <th>เหตุผล</th>
                                 <th>สถานะ</th>
-                                <th>วันที่ยื่น (ไทย)</th> <!-- Changed -->
+                                <th>วันที่ยื่น (ไทย)</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="filteredRequests.length === 0 && !isLoading">
-                                <td colspan="7" class="no-data">ไม่พบข้อมูลคำขอ</td> <!-- colspan updated -->
+                                <td colspan="7" class="no-data">ไม่พบข้อมูลคำขอ</td>
                             </tr>
                             <tr v-if="isLoading">
-                                <td colspan="7" class="no-data">กำลังโหลดข้อมูล...</td> <!-- colspan updated -->
+                                <td colspan="7" class="no-data">กำลังโหลดข้อมูล...</td>
                             </tr>
                             <tr v-for="(req, index) in filteredRequests" :key="req.id" :class="getStatusClass(req.status)">
                                 <td>{{ index + 1 }}</td>
-                                <td>{{ req.requesterName }}</td>
-                                <td>{{ formatDate(req.leaveDate) }}</td>
-                                <td>{{ req.leaveTimeFrom }} - {{ req.leaveTimeTo }} น.</td>
-                                <td>{{ req.reason }}</td>
-                                <td>{{ req.status }}</td>
-                                <td>{{ formatDate(req.submissionDate, true) }}</td>
+                                <td style="text-align: left;">{{ req.requesterName }}</td>
+                                <td style="text-align: center;">{{ formatDate(req.leaveDate) }}</td>
+                                <td style="text-align: center;">{{ req.leaveTimeFrom }} - {{ req.leaveTimeTo }} น.</td>
+                                <td style="text-align: left;">{{ req.reason }}</td>
+                                <td :class="{'cell-center': true}">{{ req.status }}</td> <!-- Added class for centering status -->
+                                <td style="text-align: center;">{{ formatDate(req.submissionDate, true) }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -153,29 +196,29 @@
                         <thead>
                             <tr>
                                 <th>ชื่อ-สกุล ผู้ขอ</th>
-                                <th>วันที่ออก</th> <!-- Changed -->
-                                <th>เวลาออก</th>   <!-- New -->
+                                <th>วันที่ขออนุญาต</th> <!-- Changed -->
+                                <th>เวลาออก (ชม.:นาที)</th>   <!-- Changed -->
                                 <th>เหตุผล</th>
                                 <th>สถานะ</th>
-                                <th>วันที่ยื่น (ไทย)</th> <!-- Changed -->
+                                <th>วันที่ยื่น (ไทย)</th>
                                 <th>การดำเนินการ</th>
                             </tr>
                         </thead>
                         <tbody>
                              <tr v-if="filteredAdminRequests.length === 0 && !isLoading">
-                                <td colspan="7" class="no-data">ไม่พบข้อมูลคำขอ</td> <!-- colspan updated -->
+                                <td colspan="7" class="no-data">ไม่พบข้อมูลคำขอ</td>
                             </tr>
                              <tr v-if="isLoading && filteredAdminRequests.length === 0">
-                                <td colspan="7" class="no-data">กำลังโหลดข้อมูล...</td> <!-- colspan updated -->
+                                <td colspan="7" class="no-data">กำลังโหลดข้อมูล...</td>
                             </tr>
                             <tr v-for="req in filteredAdminRequests" :key="req.id" :class="getStatusClass(req.status)">
-                                <td>{{ req.requesterName }}</td>
-                                <td>{{ formatDate(req.leaveDate) }}</td>
-                                <td>{{ req.leaveTimeFrom }} - {{ req.leaveTimeTo }} น.</td>
-                                <td>{{ req.reason }}</td>
-                                <td>{{ req.status }}</td>
-                                <td>{{ formatDate(req.submissionDate, true) }}</td>
-                                <td>
+                                <td style="text-align: left;">{{ req.requesterName }}</td>
+                                <td style="text-align: center;">{{ formatDate(req.leaveDate) }}</td>
+                                <td style="text-align: center;">{{ req.leaveTimeFrom }} - {{ req.leaveTimeTo }} น.</td>
+                                <td style="text-align: left;">{{ req.reason }}</td>
+                                <td :class="{'cell-center': true}">{{ req.status }}</td> <!-- Added class for centering status -->
+                                <td style="text-align: center;">{{ formatDate(req.submissionDate, true) }}</td>
+                                <td style="text-align: center;"> <!-- Center actions -->
                                     <button v-if="req.status === 'รอพิจารณา'" @click="approveRequest(req.id)" class="btn btn-approve"><i class="fas fa-check"></i> อนุมัติ</button>
                                     <button v-if="req.status === 'รอพิจารณา'" @click="rejectRequest(req.id)" class="btn btn-reject"><i class="fas fa-times"></i> ไม่อนุมัติ</button>
                                     <button @click="deleteRequest(req.id)" class="btn btn-delete"><i class="fas fa-trash-alt"></i> ลบ</button>
@@ -193,11 +236,13 @@
     </div>
 
     <script>
+        // JavaScript (Vue.js) part remains the same as the previous version.
+        // No changes needed in JS for these specific display adjustments.
         const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrmn6WLJfs5q7ye3Mo95kEraPE8BuXdSHji0Ekwlr9JO20zPrIap0ujQnqAG2wah-W/exec';
 
         const app = new Vue({
             el: '#app',
-            data: { /* ... data properties เหมือนเดิม ... */
+            data: {
                 currentView: 'dashboardView',
                 requests: [],
                 newRequest: { requesterName: '', leaveDate: '', leaveTimeFrom: '', leaveTimeTo: '', reason: '' },
@@ -211,7 +256,7 @@
                 barChartInstance: null,
                 isLoading: false,
             },
-            computed: { /* ... computed properties เหมือนเดิม ... */
+            computed: {
                 chartDataForStats() {
                     const statusCounts = { 'รอพิจารณา': 0, 'อนุมัติ': 0, 'ไม่อนุมัติ': 0 };
                     this.requests.forEach(req => { if (statusCounts.hasOwnProperty(req.status)) { statusCounts[req.status]++; } });
@@ -247,8 +292,8 @@
                     return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
                 }
             },
-            watch: { /* ... watch properties เหมือนเดิม ... */
-                 requests: { handler() { this.conditionalUpdateCharts(); }, deep: true },
+            watch: {
+                requests: { handler() { this.conditionalUpdateCharts(); }, deep: true },
                 currentView(newView, oldView) {
                     if (newView === 'dashboardView') {
                         this.$nextTick(() => { this.updateCharts(); });
@@ -258,7 +303,6 @@
                 }
             },
             methods: {
-                /* ... conditionalUpdateCharts, destroyCharts, setView, loadRequests, generateId ... เหมือนเดิม */
                 conditionalUpdateCharts() { if (this.currentView === 'dashboardView') { this.updateCharts(); } },
                 destroyCharts() {
                     if (this.pieChartInstance) { this.pieChartInstance.destroy(); this.pieChartInstance = null; }
@@ -318,37 +362,28 @@
                     }
                 },
                 generateId() { return '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36); },
-
                 formatDate(dateString, includeTime = false) {
                     if (!dateString) return '-';
                     try {
                         const date = new Date(dateString);
-                        if (isNaN(date.getTime())) {
-                            return dateString; // Return original if not a valid date
+                         if (isNaN(date.getTime())) {
+                            return dateString;
                         }
-
-                        // Options for Thai locale and timezone
                         const options = {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            timeZone: 'Asia/Bangkok' // Specify Thai timezone
+                            year: 'numeric', month: '2-digit', day: '2-digit',
+                            timeZone: 'Asia/Bangkok'
                         };
-
                         if (includeTime) {
-                            options.hour = '2-digit';
-                            options.minute = '2-digit';
-                            options.second = '2-digit'; // Optional: include seconds
-                            options.hour12 = false; // Use 24-hour format
+                            options.hour = '2-digit'; options.minute = '2-digit';
+                            // options.second = '2-digit'; // No seconds for submission date
+                            options.hour12 = false;
                         }
                         return new Intl.DateTimeFormat('th-TH', options).format(date);
                     } catch (e) {
                         console.error("Error formatting date:", e, "Input:", dateString);
-                        return dateString; // Fallback to original string
+                        return dateString;
                     }
                 },
-
-                /* ... openRequestFormModal, submitRequestToSheet, openAdminLoginModal, loginAdmin, logoutAdmin ... เหมือนเดิม */
                 openRequestFormModal() {
                     this.newRequest = { requesterName: '', leaveDate: '', leaveTimeFrom: '', leaveTimeTo: '', reason: '' };
                     Swal.fire({
@@ -442,8 +477,6 @@
                         }
                     });
                 },
-
-                /* ... updateRequestStatusInSheet, approveRequest, rejectRequest, deleteRequestFromSheet, deleteRequest ... เหมือนเดิม */
                 async updateRequestStatusInSheet(id, newStatus, successMessage, actionVerb) {
                     Swal.fire({ title: `กำลัง${actionVerb}...`, text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                     try {
@@ -492,8 +525,6 @@
                     Swal.fire({ title: 'ยืนยันการลบ?', text: "คุณต้องการลบคำขอนี้ออกจากระบบใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้", icon: 'error', showCancelButton: true, confirmButtonColor: '#D32F2F', cancelButtonColor: '#757575', confirmButtonText: 'ใช่, ลบเลย!', cancelButtonText: 'ยกเลิก'})
                     .then((result) => { if (result.isConfirmed) { this.deleteRequestFromSheet(id); } });
                 },
-
-                /* ... getStatusClass, updateCharts, createPieChart, createBarChart ... เหมือนเดิม */
                 getStatusClass(status) {
                     if (status === 'รอพิจารณา') return 'status-pending'; if (status === 'อนุมัติ') return 'status-approved'; if (status === 'ไม่อนุมัติ') return 'status-rejected'; return '';
                 },
@@ -527,7 +558,7 @@
                     this.barChartInstance = new Chart(ctx, { type: 'bar', data: data, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Prompt' } } }, x: { ticks: { font: { family: 'Prompt' }} } }, plugins: { legend: { display: false }, tooltip: { titleFont: { family: 'Prompt'}, bodyFont: { family: 'Prompt'}}} } });
                 }
             },
-            mounted() { /* ... mounted เหมือนเดิม ... */
+            mounted() {
                 this.loadRequests();
                 if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                     this.isAdminLoggedIn = true;
