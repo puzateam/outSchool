@@ -59,8 +59,10 @@
 
         /* Navigation Styles */
         nav {
-            background-color: #333;
-            color: white;
+            background-color: #ffffff; /* Changed to white */
+            color: #333; /* Default text color for nav */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow for depth */
+            border-bottom: 1px solid #eee; /* Light border bottom */
         }
 
         nav ul {
@@ -74,19 +76,27 @@
 
         nav ul li a {
             display: block;
-            color: white;
+            color: #333; /* Dark gray text for menu items */
             text-align: center;
-            padding: 14px 16px;
+            padding: 14px 20px; /* Slightly more padding */
             text-decoration: none;
-            transition: background-color 0.3s;
+            font-weight: 500; /* Make menu text slightly bolder */
+            transition: background-color 0.3s, color 0.3s;
+            border-bottom: 3px solid transparent; /* For active indicator */
         }
 
         nav ul li a:hover, nav ul li a.active {
-            background-color: #FFC107;
-            color: #D32F2F;
+            color: #D32F2F; /* Red text for hover/active */
+            background-color: #FFF9C4; /* Light yellow background for hover/active */
+            border-bottom-color: #D32F2F; /* Red border for active indicator */
+        }
+        .admin-logout a {
+            color: #555; /* Specific color for logout, if needed */
         }
         .admin-logout a:hover {
-            background-color: #c0392b;
+            background-color: #ffebee; /* Light red for logout hover */
+            color: #c0392b; /* Darker red text for logout hover */
+            border-bottom-color: #c0392b;
         }
 
         /* Main Content Styles */
@@ -129,16 +139,16 @@
             display: flex;
             gap: 20px;
             margin-bottom: 30px;
-            flex-wrap: wrap; /* Allow charts to wrap on smaller screens if needed */
+            flex-wrap: wrap;
         }
         .chart-wrapper {
-            flex: 1 1 45%; /* Allow shrinking, growing, base width around 45% for two columns */
-            min-width: 280px; /* Minimum width before wrapping or becoming too small */
+            flex: 1 1 45%;
+            min-width: 280px;
             background-color: #f9f9f9;
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            height: 350px; /* Adjusted height for better fit */
+            height: 350px;
             display: flex;
             flex-direction: column;
         }
@@ -148,18 +158,13 @@
             margin-bottom: 15px;
             font-size: 1.1em;
             color: #555;
-            flex-shrink: 0; /* Prevent title from shrinking */
+            flex-shrink: 0;
         }
-        .chart-canvas-container { /* New wrapper for canvas to better control its size */
-            flex-grow: 1; /* Allow this container to take remaining space */
-            position: relative; /* Needed for Chart.js responsive with maintainAspectRatio: false */
-            overflow: hidden; /* Hide any overflow from canvas */
+        .chart-canvas-container {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
         }
-        canvas {
-            /* Let Chart.js handle canvas sizing with responsive: true & maintainAspectRatio: false */
-            /* CSS for canvas itself will be minimal as Chart.js will manage its dimensions within its parent */
-        }
-
 
         /* Form Styles */
         .form-group { margin-bottom: 15px; }
@@ -206,26 +211,17 @@
         footer { background-color: #333; color: #aaa; text-align: center; padding: 15px; font-size: 0.9em; margin-top: auto; }
 
         /* Responsive Design */
-        @media (max-width: 992px) { /* Adjusted breakpoint for better chart layout */
-            .chart-wrapper {
-                flex-basis: 100%; /* Each chart takes full width on medium screens */
-                max-width: 100%;
-                height: 320px; /* Slightly reduce height */
-            }
+        @media (max-width: 992px) {
+            .chart-wrapper { flex-basis: 100%; max-width: 100%; height: 320px; }
         }
 
         @media (max-width: 768px) {
             #system-name { font-size: 1.2em; }
             #logo { max-height: 60px; }
             nav ul { flex-direction: column; }
-            nav ul li a { padding: 12px 10px; }
+            nav ul li a { padding: 12px 10px; border-bottom-width: 2px; /* Thinner border for stacked menu */ }
             .charts-container { flex-direction: column; }
-            .chart-wrapper {
-                min-width: unset;
-                width: 100%;
-                max-width: 100%;
-                height: 300px; /* Adjust height for small screens */
-            }
+            .chart-wrapper { min-width: unset; width: 100%; max-width: 100%; height: 300px; }
             .filter-search-container { flex-direction: column; }
             .search-input, .filter-select { width: 100%; }
             .btn { width: 100%; margin-bottom: 10px; margin-right: 0;}
@@ -235,9 +231,7 @@
             #system-name { font-size: 1em; }
             #logo { max-height: 50px; }
             .view-container h2 { font-size: 1.3em; }
-             .chart-wrapper {
-                height: 280px; /* Further reduce height for very small screens */
-            }
+            .chart-wrapper { height: 280px; }
         }
     </style>
 </head>
@@ -263,10 +257,9 @@
         </nav>
 
         <main>
-            <!-- View: Dashboard (Formerly Status / All Requests) -->
+            <!-- View: Dashboard -->
             <div v-if="currentView === 'dashboardView'" class="view-container">
                 <h2><i class="fas fa-tachometer-alt"></i> แดชบอร์ด - ภาพรวมคำขออนุญาต</h2>
-
                 <div class="charts-container">
                     <div class="chart-wrapper">
                         <h3>สถิติสถานะคำขอ (ภาพรวม)</h3>
@@ -320,7 +313,7 @@
                 </div>
             </div>
 
-             <!-- View: Request Form -->
+            <!-- View: Request Form -->
             <div v-if="currentView === 'requestForm'" class="view-container">
                 <h2><i class="fas fa-file-alt"></i> ยื่นคำขออนุญาตออกนอกสถานศึกษา</h2>
                 <form @submit.prevent="submitRequest" class="request-form">
@@ -347,7 +340,6 @@
                     <button type="submit" class="btn btn-submit">ยื่นคำขอ</button>
                 </form>
             </div>
-
 
             <!-- View: Admin Login -->
             <div v-if="currentView === 'adminLogin'" class="view-container">
@@ -594,40 +586,49 @@
                     const ctx = document.getElementById('statusPieChart');
                     if (!ctx || !ctx.getContext('2d')) return;
                     const stats = this.chartDataForStats;
-                    if (Object.values(stats).every(v => v === 0) && !this.requests.length) { // No data at all
-                        ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height); // Clear canvas
-                        // Optionally display a "No data" message on the canvas
+                    if (Object.values(stats).every(v => v === 0) && !this.requests.length) {
+                        const context = ctx.getContext('2d');
+                        context.clearRect(0, 0, ctx.width, ctx.height);
+                         context.font = "16px Prompt"; context.fillStyle = "#888"; context.textAlign = "center";
+                        context.fillText("ไม่มีข้อมูลสำหรับแสดงผล", ctx.width / 2, ctx.height / 2);
                         return;
                     }
                     const data = { labels: Object.keys(stats), datasets: [{ label: 'สถานะคำขอ', data: Object.values(stats), backgroundColor: ['#FFC107', '#4CAF50', '#D32F2F'], hoverOffset: 4 }] };
-                    this.pieChartInstance = new Chart(ctx, { type: 'pie', data: data, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } } });
+                    this.pieChartInstance = new Chart(ctx, { type: 'pie', data: data, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: {font: { family: 'Prompt'}}} } } });
                 },
                 createBarChart() {
                     if (this.barChartInstance) { this.barChartInstance.destroy(); }
                     const ctx = document.getElementById('statusCountBarChart');
                      if (!ctx || !ctx.getContext('2d')) return;
                     const stats = this.chartDataForStats;
-                     if (Object.values(stats).every(v => v === 0) && !this.requests.length) { // No data at all
-                        ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height); // Clear canvas
+                     if (Object.values(stats).every(v => v === 0) && !this.requests.length) {
+                        const context = ctx.getContext('2d');
+                        context.clearRect(0, 0, ctx.width, ctx.height);
+                        context.font = "16px Prompt"; context.fillStyle = "#888"; context.textAlign = "center";
+                        context.fillText("ไม่มีข้อมูลสำหรับแสดงผล", ctx.width / 2, ctx.height / 2);
                         return;
                     }
                     const data = { labels: Object.keys(stats), datasets: [{ label: 'จำนวนคำขอ', data: Object.values(stats), backgroundColor: ['rgba(255, 193, 7, 0.7)', 'rgba(76, 175, 80, 0.7)', 'rgba(211, 47, 47, 0.7)'], borderColor: ['#FFC107', '#4CAF50', '#D32F2F'], borderWidth: 1 }] };
-                    this.barChartInstance = new Chart(ctx, { type: 'bar', data: data, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }}}, plugins: { legend: { display: false }} } });
+                    this.barChartInstance = new Chart(ctx, { type: 'bar', data: data, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Prompt' } } }, x: { ticks: { font: { family: 'Prompt' }} } }, plugins: { legend: { display: false }, tooltip: { titleFont: { family: 'Prompt'}, bodyFont: { family: 'Prompt'}}} } });
                 }
             },
             mounted() {
                 this.loadRequests();
                 if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                     this.isAdminLoggedIn = true;
-                    // Do not set view to adminDashboard here if we want dashboardView to init charts
-                    // The setView in loginAdmin will handle redirection
-                    if (this.currentView !== 'adminDashboard') { // If not already on admin, and shouldn't be
-                        this.currentView = 'dashboardView'; // Default for non-admin or if admin logs out
+                    // If admin logs in, they likely want the admin dashboard,
+                    // but if they navigate away and come back, it should remember the last view
+                    // or default to dashboardView if not admin dashboard.
+                    // For simplicity, if logged in, let's assume they might be on adminDashboard.
+                    // If not, it will default to dashboardView.
+                    if (this.currentView !== 'adminDashboard' && this.currentView !== 'requestForm' && this.currentView !== 'adminLogin' ) {
+                       this.currentView = 'dashboardView'; // Default for general users or after logout
                     }
+
                 } else {
-                     this.currentView = 'dashboardView'; // Ensure charts are loaded on initial non-admin view
+                     this.currentView = 'dashboardView';
                 }
-                 // Ensure charts are loaded based on the final currentView after auth check
+
                 if (this.currentView === 'dashboardView') {
                     this.$nextTick(() => this.updateCharts());
                 }
