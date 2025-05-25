@@ -1,0 +1,267 @@
+const app = new Vue({
+    el: '#app',
+    data: {
+        currentView: 'statusView', // Default view
+        requests: [],
+        newRequest: {
+            studentName: '',
+            studentClass: '',
+            leaveDate: '',
+            leaveTimeFrom: '',
+            leaveTimeTo: '',
+            reason: '',
+        },
+        adminCredentials: {
+            username: '',
+            password: ''
+        },
+        isAdminLoggedIn: false,
+        searchTerm: '',
+        filterStatus: '',
+        searchTermAdmin: '',
+        filterStatusAdmin: 'รอพิจารณา', // Default admin filter
+    },
+    computed: {
+        filteredRequests() {
+            let tempRequests = this.requests;
+
+            if (this.searchTerm) {
+                const term = this.searchTerm.toLowerCase();
+                tempRequests = tempRequests.filter(req =>
+                    req.studentName.toLowerCase().includes(term) ||
+                    req.reason.toLowerCase().includes(term) ||
+                    req.status.toLowerCase().includes(term)
+                );
+            }
+
+            if (this.filterStatus) {
+                tempRequests = tempRequests.filter(req => req.status === this.filterStatus);
+            }
+            // Sort by submissionDate descending (newest first)
+            return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
+        },
+        filteredAdminRequests() {
+            let tempRequests = this.requests;
+
+            if (this.searchTermAdmin) {
+                const term = this.searchTermAdmin.toLowerCase();
+                tempRequests = tempRequests.filter(req =>
+                    req.studentName.toLowerCase().includes(term) ||
+                    req.reason.toLowerCase().includes(term)
+                );
+            }
+            
+            if (this.filterStatusAdmin) {
+                tempRequests = tempRequests.filter(req => req.status === this.filterStatusAdmin);
+            }
+             // Sort by submissionDate descending (newest first)
+            return tempRequests.sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
+        }
+    },
+    methods: {
+        setView(view) {
+            this.currentView = view;
+            // If navigating to admin dashboard without being logged in, redirect to login
+            if (view === 'adminDashboard' && !this.isAdminLoggedIn) {
+                this.currentView = 'adminLogin';
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณาเข้าสู่ระบบ',
+                    text: 'คุณต้องเข้าสู่ระบบผู้บริหารเพื่อเข้าถึงหน้านี้',
+                    confirmButtonColor: '#D32F2F'
+                });
+            }
+            // Reset search/filter for general status view
+            if (view === 'statusView') {
+                this.searchTerm = '';
+                this.filterStatus = '';
+            }
+        },
+        loadRequests() {
+            const storedRequests = localStorage.getItem('schoolLeaveRequests');
+            if (storedRequests) {
+                this.requests = JSON.parse(storedRequests);
+            }
+            // Check admin login status from session storage (persists across page refresh but not browser close)
+            if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+                this.isAdminLoggedIn = true;
+            }
+        },
+        saveRequests() {
+            localStorage.setItem('schoolLeaveRequests', JSON.stringify(this.requests));
+        },
+        generateId() {
+            return '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+        },
+        formatDate(dateString, includeTime = false) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+            if (includeTime) {
+                options.hour = '2-digit';
+                options.minute = '2-digit';
+            }
+            return date.toLocaleDateString('th-TH', options);
+        },
+        submitRequest() {
+            if (!this.newRequest.studentName || !this.newRequest.studentClass || !this.newRequest.leaveDate || !this.newRequest.leaveTimeFrom || !this.newRequest.leaveTimeTo || !this.newRequest.reason) {
+                 Swal.fire({
+                    icon: 'error',
+                    title: 'ข้อมูลไม่ครบถ้วน',
+                    text: 'กรุณากรอกข้อมูลให้ครบทุกช่อง',
+                    confirmButtonColor: '#D32F2F'
+                });
+                return;
+            }
+
+            const requestData = {
+                id: this.generateId(),
+                studentName: this.newRequest.studentName,
+                studentClass: this.newRequest.studentClass,
+                leaveDate: this.newRequest.leaveDate,
+                leaveTimeFrom: this.newRequest.leaveTimeFrom,
+                leaveTimeTo: this.newRequest.leaveTimeTo,
+                reason: this.newRequest.reason,
+                status: 'รอพิจารณา', // Default status
+                submissionDate: new Date().toISOString()
+            };
+            this.requests.push(requestData);
+            this.saveRequests();
+
+            // Reset form
+            this.newRequest = { studentName: '', studentClass: '', leaveDate: '', leaveTimeFrom: '', leaveTimeTo: '', reason: '' };
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'ยื่นคำขอสำเร็จ!',
+                text: 'คำขอของคุณถูกส่งเข้าระบบแล้ว โปรดรอการพิจารณา',
+                confirmButtonColor: '#D32F2F'
+            }).then(() => {
+                this.setView('statusView'); // Go to status view after submission
+            });
+        },
+        loginAdmin() {
+            if (this.adminCredentials.username === 'mlpyboss' && this.adminCredentials.password === '06052520') {
+                this.isAdminLoggedIn = true;
+                sessionStorage.setItem('isAdminLoggedIn', 'true'); // Save login state
+                this.adminCredentials = { username: '', password: '' }; // Clear credentials
+                this.setView('adminDashboard');
+                 Swal.fire({
+                    icon: 'success',
+                    title: 'เข้าสู่ระบบสำเร็จ',
+                    text: 'ยินดีต้อนรับผู้บริหาร',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    confirmButtonColor: '#D32F2F'
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เข้าสู่ระบบไม่สำเร็จ',
+                    text: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+                    confirmButtonColor: '#D32F2F'
+                });
+            }
+        },
+        logoutAdmin() {
+             Swal.fire({
+                title: 'ยืนยันการออกจากระบบ?',
+                text: "คุณต้องการออกจากระบบผู้บริหารใช่หรือไม่?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#D32F2F',
+                cancelButtonColor: '#FFC107',
+                confirmButtonText: 'ใช่, ออกจากระบบ',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.isAdminLoggedIn = false;
+                    sessionStorage.removeItem('isAdminLoggedIn');
+                    this.setView('statusView'); // Or 'adminLogin'
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'ออกจากระบบแล้ว',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        confirmButtonColor: '#D32F2F'
+                    });
+                }
+            });
+        },
+        approveRequest(id) {
+            Swal.fire({
+                title: 'ยืนยันการอนุมัติ?',
+                text: "คุณต้องการอนุมัติคำขอนี้ใช่หรือไม่?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#4CAF50',
+                cancelButtonColor: '#757575',
+                confirmButtonText: 'อนุมัติ',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const request = this.requests.find(req => req.id === id);
+                    if (request) {
+                        request.status = 'อนุมัติ';
+                        this.saveRequests();
+                        Swal.fire('อนุมัติแล้ว!', 'คำขอได้รับการอนุมัติเรียบร้อย', 'success');
+                    }
+                }
+            });
+        },
+        rejectRequest(id) {
+            Swal.fire({
+                title: 'ยืนยันการไม่อนุมัติ?',
+                text: "คุณต้องการไม่อนุมัติคำขอนี้ใช่หรือไม่?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f44336',
+                cancelButtonColor: '#757575',
+                confirmButtonText: 'ไม่อนุมัติ',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const request = this.requests.find(req => req.id === id);
+                    if (request) {
+                        request.status = 'ไม่อนุมัติ';
+                        this.saveRequests();
+                        Swal.fire('ไม่อนุมัติแล้ว!', 'คำขอไม่ได้รับการอนุมัติ', 'info');
+                    }
+                }
+            });
+        },
+        deleteRequest(id) {
+            Swal.fire({
+                title: 'ยืนยันการลบ?',
+                text: "คุณต้องการลบคำขอนี้ออกจากระบบใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้",
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#D32F2F',
+                cancelButtonColor: '#757575',
+                confirmButtonText: 'ใช่, ลบเลย!',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.requests = this.requests.filter(req => req.id !== id);
+                    this.saveRequests();
+                    Swal.fire('ลบสำเร็จ!', 'คำขอถูกลบออกจากระบบแล้ว', 'success');
+                }
+            });
+        },
+        getStatusClass(status) {
+            if (status === 'รอพิจารณา') return 'status-pending';
+            if (status === 'อนุมัติ') return 'status-approved';
+            if (status === 'ไม่อนุมัติ') return 'status-rejected';
+            return '';
+        }
+    },
+    mounted() {
+        this.loadRequests();
+        // Set initial view, check if admin was logged in
+        if (this.isAdminLoggedIn) {
+            this.setView('adminDashboard');
+        } else {
+            this.setView('statusView'); // Default to status view for general users
+        }
+    }
+});
